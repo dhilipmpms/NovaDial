@@ -256,6 +256,64 @@ class RecentsHelper(private val context: Context) {
         }
     }
 
+    private fun isNumberMatch(numberA: String, numberB: String): Boolean {
+        if (numberA.isBlank() || numberB.isBlank()) return false
+        if (numberA == numberB) return true
+        @Suppress("DEPRECATION")
+        if (PhoneNumberUtils.compare(numberA, numberB)) return true
+        val normA = numberA.normalizePhoneNumber() ?: ""
+        val normB = numberB.normalizePhoneNumber() ?: ""
+        if (normA.isNotBlank() && normB.isNotBlank() && normA == normB) return true
+        val keyA = if (normA.length >= COMPARABLE_PHONE_NUMBER_LENGTH) normA.takeLast(COMPARABLE_PHONE_NUMBER_LENGTH) else normA
+        val keyB = if (normB.length >= COMPARABLE_PHONE_NUMBER_LENGTH) normB.takeLast(COMPARABLE_PHONE_NUMBER_LENGTH) else normB
+        return keyA.isNotBlank() && keyA == keyB
+    }
+
+    private fun buildNumberMatchSelection(numbersToMatch: List<String>): Pair<String, Array<String>>? {
+        val exactNumbers = mutableSetOf<String>()
+        val likePatterns = mutableSetOf<String>()
+
+        for (num in numbersToMatch) {
+            val trimmed = num.trim()
+            if (trimmed.isNotBlank()) {
+                exactNumbers.add(trimmed)
+                val stripped = trimmed.removePrefix("+").trimStart('0')
+                if (stripped.isNotBlank()) {
+                    exactNumbers.add(stripped)
+                }
+
+                val digits = trimmed.filter { it.isDigit() }
+                if (digits.length >= 7) {
+                    val suffix7 = digits.takeLast(7)
+                    likePatterns.add("%$suffix7")
+                } else if (digits.isNotBlank()) {
+                    likePatterns.add("%$digits")
+                }
+            }
+        }
+
+        if (exactNumbers.isEmpty() && likePatterns.isEmpty()) {
+            return null
+        }
+
+        val clauses = mutableListOf<String>()
+        val args = mutableListOf<String>()
+
+        if (exactNumbers.isNotEmpty()) {
+            val placeholders = exactNumbers.joinToString(",") { "?" }
+            clauses.add("${Calls.NUMBER} IN ($placeholders)")
+            args.addAll(exactNumbers)
+        }
+
+        for (pattern in likePatterns) {
+            clauses.add("${Calls.NUMBER} LIKE ?")
+            args.add(pattern)
+        }
+
+        val selectionString = clauses.joinToString(" OR ")
+        return Pair(selectionString, args.toTypedArray())
+    }
+
     fun getRecentCallsForNumber(
         recentCall: RecentCall,
         callback: (List<RecentCall>) -> Unit,
@@ -267,34 +325,43 @@ class RecentsHelper(private val context: Context) {
         }
 
         val privateCursor = context.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
-            ContactsCache.getContacts(context) { contacts ->
+        ContactsCache.getContacts(context) { contacts ->
             ensureBackgroundThread {
-                val privateContacts = MyContactsContentProvider.getContacts(context, privateCursor)
-                if (privateContacts.isNotEmpty()) {
-                    contacts.addAll(privateContacts)
-                }
+                try {
+                    val privateContacts = MyContactsContentProvider.getContacts(context, privateCursor)
+                    if (privateContacts.isNotEmpty()) {
+                        contacts.addAll(privateContacts)
+                    }
 
-                val matchingContact = contacts.firstOrNull { it.doesHavePhoneNumber(phoneNumber) }
-                val numbersToMatch = (matchingContact?.phoneNumbers
-                    ?.flatMap { listOf(it.value, it.normalizedNumber) }
-                    ?: listOf(phoneNumber))
-                    .plus(phoneNumber)
-                    .filter { it.isNotBlank() }
-                    .distinct()
+                    val matchingContact = contacts.firstOrNull { it.doesHavePhoneNumber(phoneNumber) }
+                    val numbersToMatch = (matchingContact?.phoneNumbers
+                        ?.flatMap { listOf(it.value, it.normalizedNumber) }
+                        ?: listOf(phoneNumber))
+                        .plus(phoneNumber)
+                        .plus(phoneNumber.normalizePhoneNumber() ?: "")
+                        .filter { it.isNotBlank() }
+                        .distinct()
 
-                queryLimit = Int.MAX_VALUE
-                val calls = getRecents(
-                    contacts = contacts,
-                    selection = "${Calls.NUMBER} IN (${getQuestionMarks(numbersToMatch.size)})",
-                    selectionParams = numbersToMatch.toTypedArray()
-                )
+                    val selectionPair = buildNumberMatchSelection(numbersToMatch)
+                    val savedQueryLimit = queryLimit
+                    queryLimit = Int.MAX_VALUE
+                    val calls = getRecents(
+                        contacts = contacts,
+                        selection = selectionPair?.first,
+                        selectionParams = selectionPair?.second
+                    )
+                    queryLimit = savedQueryLimit
 
-                callback(
-                    calls
-                        .filter { call -> numbersToMatch.any { PhoneNumberUtils.compare(call.phoneNumber, it) || call.phoneNumber == it } }
+                    val result = calls
+                        .filter { call -> numbersToMatch.any { target -> isNumberMatch(call.phoneNumber, target) } }
                         .sortedByDescending { it.startTS }
                         .distinctBy { it.id }
-                )
+
+                    callback(result)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error fetching call history for seed call", e)
+                    callback(emptyList())
+                }
             }
         }
     }
@@ -323,40 +390,46 @@ class RecentsHelper(private val context: Context) {
         val privateCursor = context.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
         ContactsCache.getContacts(context) { contacts ->
             ensureBackgroundThread {
-                val privateContacts = MyContactsContentProvider.getContacts(context, privateCursor)
-                if (privateContacts.isNotEmpty()) {
-                    contacts.addAll(privateContacts)
+                try {
+                    val privateContacts = MyContactsContentProvider.getContacts(context, privateCursor)
+                    if (privateContacts.isNotEmpty()) {
+                        contacts.addAll(privateContacts)
+                    }
+
+                    val matchingContact = contacts.firstOrNull { it.doesHavePhoneNumber(phoneNumber) }
+                    val numbersToMatch = (matchingContact?.phoneNumbers
+                        ?.flatMap { listOf(it.value, it.normalizedNumber) }
+                        ?: listOf(phoneNumber))
+                        .plus(phoneNumber)
+                        .plus(phoneNumber.normalizePhoneNumber() ?: "")
+                        .filter { it.isNotBlank() }
+                        .distinct()
+
+                    val selectionPair = buildNumberMatchSelection(numbersToMatch)
+                    val savedQueryLimit = queryLimit
+                    queryLimit = Int.MAX_VALUE
+                    
+                    val calls = getRecents(
+                        contacts = contacts,
+                        selection = selectionPair?.first,
+                        selectionParams = selectionPair?.second
+                    )
+
+                    queryLimit = savedQueryLimit
+
+                    val result = calls
+                        .filter { call -> numbersToMatch.any { target -> isNumberMatch(call.phoneNumber, target) } }
+                        .sortedByDescending { it.startTS }
+                        .distinctBy { it.id }
+                    
+                    val elapsed = System.currentTimeMillis() - startTime
+                    Log.d(TAG, "[HISTORY_END] Loaded ${result.size} calls for $phoneNumber in ${elapsed}ms")
+
+                    callback(result)
+                } catch (e: Exception) {
+                    Log.e(TAG, "Error fetching call history for number $phoneNumber", e)
+                    callback(emptyList())
                 }
-
-                val matchingContact = contacts.firstOrNull { it.doesHavePhoneNumber(phoneNumber) }
-                val numbersToMatch = (matchingContact?.phoneNumbers
-                    ?.flatMap { listOf(it.value, it.normalizedNumber) }
-                    ?: listOf(phoneNumber))
-                    .plus(phoneNumber)
-                    .filter { it.isNotBlank() }
-                    .distinct()
-
-                // Load FULL history - no limit
-                val savedQueryLimit = queryLimit
-                queryLimit = Int.MAX_VALUE
-                
-                val calls = getRecents(
-                    contacts = contacts,
-                    selection = "${Calls.NUMBER} IN (${getQuestionMarks(numbersToMatch.size)})",
-                    selectionParams = numbersToMatch.toTypedArray()
-                )
-
-                queryLimit = savedQueryLimit
-
-                val result = calls
-                    .filter { call -> numbersToMatch.any { PhoneNumberUtils.compare(call.phoneNumber, it) || call.phoneNumber == it } }
-                    .sortedByDescending { it.startTS }
-                    .distinctBy { it.id }
-                
-                val elapsed = System.currentTimeMillis() - startTime
-                Log.d(TAG, "[HISTORY_END] Loaded ${result.size} calls for $phoneNumber in ${elapsed}ms")
-
-                callback(result)
             }
         }
     }
@@ -671,7 +744,7 @@ class RecentsHelper(private val context: Context) {
         Log.d(TAG, "[GETRECENTS_START] Starting with ${contacts.size} contacts, selection: $selection")
         
         val recentCalls = mutableListOf<RecentCall>()
-        var previousStartTS = 0L
+        val seenIds = HashSet<Int>()
         val contactsNumbersMap = HashMap<String, String>()
         val contactPhotosMap = HashMap<String, String>()
 
@@ -723,6 +796,9 @@ class RecentsHelper(private val context: Context) {
 
             do {
                 val id = cursor.getIntValue(Calls._ID)
+                if (!seenIds.add(id)) {
+                    continue
+                }
                 var isUnknownNumber = false
                 val number = cursor.getStringValueOrNull(Calls.NUMBER)
                 val presentation = cursor.getIntValueOrNull(Calls.NUMBER_PRESENTATION) ?: Calls.PRESENTATION_ALLOWED
@@ -743,7 +819,7 @@ class RecentsHelper(private val context: Context) {
                         name = contactsNumbersMap[number]!!
                     } else {
                         val normalizedNumber = number.normalizePhoneNumber()
-                        if (normalizedNumber!!.length >= COMPARABLE_PHONE_NUMBER_LENGTH) {
+                        if (normalizedNumber != null && normalizedNumber.length >= COMPARABLE_PHONE_NUMBER_LENGTH) {
                             name = contacts.filter { it.phoneNumbers.isNotEmpty() }.firstOrNull { contact ->
                                 val curNumber = contact.phoneNumbers.first().normalizedNumber
                                 if (curNumber.length >= COMPARABLE_PHONE_NUMBER_LENGTH) {
@@ -779,11 +855,6 @@ class RecentsHelper(private val context: Context) {
                 }
 
                 val startTS = cursor.getLongValue(Calls.DATE)
-                if (previousStartTS == startTS) {
-                    continue
-                } else {
-                    previousStartTS = startTS
-                }
 
                 val duration = cursor.getIntValue(Calls.DURATION)
                 val type = cursor.getIntValue(Calls.TYPE)

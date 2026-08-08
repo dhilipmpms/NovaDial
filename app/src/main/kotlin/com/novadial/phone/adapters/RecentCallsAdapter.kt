@@ -499,7 +499,7 @@ class RecentCallsAdapter(
                 } else {
                     SpannableString(name)
                 }
-                val shouldShowDuration = call.type != Calls.MISSED_TYPE && call.type != Calls.REJECTED_TYPE && call.duration > 0
+                val shouldShowDuration = call.type != Calls.MISSED_TYPE && call.type != Calls.REJECTED_TYPE && call.type != Calls.BLOCKED_TYPE && call.duration > 0
 
                 if (refreshItemsListener == null) {
                     // show specific number at "Show call details" dialog too
@@ -521,12 +521,12 @@ class RecentCallsAdapter(
                     nameToShow = SpannableString(nameToShow.toString().highlightTextPart(textToHighlight, properPrimaryColor))
                 }
 
-                val consecutiveMissed = if (call.type == Calls.MISSED_TYPE) {
+                val consecutiveMissed = if (call.type == Calls.MISSED_TYPE || call.type == Calls.REJECTED_TYPE || call.type == Calls.BLOCKED_TYPE) {
                     val grouped = call.groupedCalls
                     if (grouped != null) {
                         var count = 0
                         for (c in grouped) {
-                            if (c.type == Calls.MISSED_TYPE) {
+                            if (c.type == Calls.MISSED_TYPE || c.type == Calls.REJECTED_TYPE || c.type == Calls.BLOCKED_TYPE) {
                                 count++
                             } else {
                                 break
@@ -561,7 +561,7 @@ class RecentCallsAdapter(
                         call.startTS.formatTime(activity)
                     }
 
-                    setTextColor(if (call.type == Calls.MISSED_TYPE) missedCallColor else secondaryTextColor)
+                    setTextColor(if (call.type == Calls.MISSED_TYPE || call.type == Calls.REJECTED_TYPE || call.type == Calls.BLOCKED_TYPE) missedCallColor else secondaryTextColor)
                     setTextSize(TypedValue.COMPLEX_UNIT_PX, currentFontSize * 0.8f)
                 }
 
@@ -640,7 +640,7 @@ class RecentCallsAdapter(
 
                 val drawable = when (call.type) {
                     Calls.OUTGOING_TYPE -> if (call.duration > 0) outgoingCallIcon else redOutgoingCallIcon
-                    Calls.MISSED_TYPE -> incomingMissedCallIcon
+                    Calls.MISSED_TYPE, Calls.REJECTED_TYPE, Calls.BLOCKED_TYPE -> incomingMissedCallIcon
                     else -> incomingCallIcon
                 }
 
