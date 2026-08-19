@@ -31,6 +31,7 @@ import com.novadial.phone.extensions.config
 import com.novadial.phone.extensions.handleGenericContactClick
 import com.novadial.phone.extensions.setupWithContacts
 import com.novadial.phone.extensions.startContactDetailsIntent
+import com.novadial.phone.extensions.startNovaContactDetailsIntent
 import com.novadial.phone.interfaces.RefreshItemsListener
 
 class FavoritesFragment(context: Context, attributeSet: AttributeSet) : MyViewPagerFragment<MyViewPagerFragment.LettersInnerBinding>(context, attributeSet),
@@ -130,7 +131,7 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) : MyViewPa
                     activity?.handleGenericContactClick(it as Contact)
                 },
                 profileIconClick = {
-                    activity?.startContactDetailsIntent(it as Contact)
+                    activity?.startNovaContactDetailsIntent(it as Contact)
                 }).apply {
                 binding.fragmentList.adapter = this
 

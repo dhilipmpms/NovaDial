@@ -55,6 +55,7 @@ import com.novadial.phone.databinding.ItemRecentCallBinding
 import com.novadial.phone.extensions.areMultipleSIMsAvailable
 import com.novadial.phone.extensions.config
 import com.novadial.phone.extensions.startCallWithConfirmationCheck
+import com.novadial.phone.extensions.startNovaContactDetailsIntent
 import com.novadial.phone.helpers.RecentsHelper
 import com.novadial.phone.models.RecentCall
 
@@ -329,16 +330,11 @@ class ContactCallHistoryActivity : SimpleActivity() {
     }
 
     private fun editContact() {
-        val currentContactId = contactId ?: return
-        val contactUri = ContentUris.withAppendedId(
-            ContactsContract.Contacts.CONTENT_URI,
-            currentContactId
-        )
-        val intent = Intent(Intent.ACTION_EDIT, contactUri)
-        try {
-            startActivity(intent)
-        } catch (e: Exception) {
-            toast("No app found to edit contact")
+        val currentContactId = contactId
+        if (currentContactId != null) {
+            startNovaContactDetailsIntent(currentContactId)
+        } else {
+            startNovaContactDetailsIntent(seedCall.phoneNumber, seedCall.name)
         }
     }
 

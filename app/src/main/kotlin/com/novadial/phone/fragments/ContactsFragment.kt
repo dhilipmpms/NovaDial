@@ -20,16 +20,19 @@ import org.fossify.commons.helpers.PERMISSION_READ_CONTACTS
 import org.fossify.commons.helpers.SMT_PRIVATE
 import org.fossify.commons.helpers.getProperText
 import org.fossify.commons.models.contacts.Contact
+import org.fossify.commons.helpers.ON_CLICK_VIEW_CONTACT
 import com.novadial.phone.R
 import com.novadial.phone.activities.MainActivity
 import com.novadial.phone.activities.SimpleActivity
 import com.novadial.phone.adapters.ContactsAdapter
 import com.novadial.phone.databinding.FragmentContactsBinding
 import com.novadial.phone.databinding.FragmentLettersLayoutBinding
+import com.novadial.phone.extensions.config
 import com.novadial.phone.extensions.handleGenericContactClick
 import com.novadial.phone.extensions.launchCreateNewContactIntent
 import com.novadial.phone.extensions.setupWithContacts
 import com.novadial.phone.extensions.startContactDetailsIntent
+import com.novadial.phone.extensions.startNovaContactDetailsIntent
 import com.novadial.phone.interfaces.RefreshItemsListener
 
 class ContactsFragment(context: Context, attributeSet: AttributeSet) : MyViewPagerFragment<MyViewPagerFragment.LettersInnerBinding>(context, attributeSet),
@@ -128,10 +131,15 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) : MyViewPag
                     recyclerView = binding.fragmentList,
                     refreshItemsListener = this,
                     itemClick = {
-                        activity?.handleGenericContactClick(it as Contact)
+                        val contact = it as Contact
+                        if (context.config.onContactClick == ON_CLICK_VIEW_CONTACT) {
+                            activity?.startNovaContactDetailsIntent(contact)
+                        } else {
+                            activity?.handleGenericContactClick(contact)
+                        }
                     },
                     profileIconClick = {
-                        activity?.startContactDetailsIntent(it as Contact)
+                        activity?.startNovaContactDetailsIntent(it as Contact)
                     }
                 ).apply {
                     binding.fragmentList.adapter = this

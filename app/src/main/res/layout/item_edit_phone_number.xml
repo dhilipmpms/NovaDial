@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:orientation="horizontal"
+    android:gravity="center_vertical"
+    android:paddingTop="8dp"
+    android:paddingBottom="8dp">
+
+    <org.fossify.commons.views.MyEditText
+        android:id="@+id/edit_phone_number"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_weight="1"
+        android:hint="@string/phone_number"
+        android:inputType="phone"
+        android:textColor="#FFFFFF"
+        android:textColorHint="#555555"
+        android:textSize="15sp" />
+
+    <Spinner
+        android:id="@+id/edit_phone_type_spinner"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="8dp"
+        android:backgroundTint="#8E8E93"
+        android:spinnerMode="dropdown" />
+
+    <ImageView
+        android:id="@+id/remove_phone_button"
+        android:layout_width="36dp"
+        android:layout_height="36dp"
+        android:layout_marginStart="4dp"
+        android:background="?attr/selectableItemBackgroundBorderless"
+        android:padding="6dp"
+        android:src="@drawable/ic_delete_vector"
+        app:tint="#FF453A" />
+</LinearLayout>

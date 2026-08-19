@@ -17,9 +17,14 @@ object ContactsCache {
 
     fun getContactByNumber(number: String): Contact? {
         val list = cachedContacts ?: return null
-        val normalized = number.trim()
-        if (normalized.isEmpty()) return null
-        return list.firstOrNull { it.doesHavePhoneNumber(normalized) }
+        val targetCanonical = com.novadial.phone.extensions.getCanonicalPhoneNumber(number)
+        if (targetCanonical.isEmpty()) return null
+        return list.firstOrNull { contact ->
+            contact.phoneNumbers.any { p ->
+                com.novadial.phone.extensions.getCanonicalPhoneNumber(p.value) == targetCanonical ||
+                (p.normalizedNumber.isNotBlank() && com.novadial.phone.extensions.getCanonicalPhoneNumber(p.normalizedNumber) == targetCanonical)
+            } || contact.doesHavePhoneNumber(number)
+        }
     }
 
     fun getContacts(context: Context, forceRefresh: Boolean = false, callback: (MutableList<Contact>) -> Unit) {
