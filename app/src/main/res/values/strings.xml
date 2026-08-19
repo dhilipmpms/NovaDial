@@ -27,6 +27,8 @@
     <string name="total_call_duration">Total duration</string>
     <string name="no_video_call_app">No video calling app found</string>
     <string name="rejected">Rejected</string>
+    <string name="blocked">Blocked</string>
+    <string name="answered_externally">Answered externally</string>
     <string name="nova_appearance">Nova appearance</string>
     <string name="dynamic_colors">Use dynamic colors</string>
     <string name="amoled_black">AMOLED black theme</string>

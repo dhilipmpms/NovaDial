@@ -96,9 +96,9 @@ class ContactFullHistoryActivity : SimpleActivity() {
 
     private fun applyFilter() {
         val filteredCalls = when (selectedFilter) {
-            FILTER_INCOMING -> allCalls.filter { it.type == Calls.INCOMING_TYPE || it.type == Calls.REJECTED_TYPE }
+            FILTER_INCOMING -> allCalls.filter { it.type == Calls.INCOMING_TYPE || it.type == Calls.ANSWERED_EXTERNALLY_TYPE }
             FILTER_OUTGOING -> allCalls.filter { it.type == Calls.OUTGOING_TYPE }
-            FILTER_MISSED -> allCalls.filter { it.type == Calls.MISSED_TYPE }
+            FILTER_MISSED -> allCalls.filter { it.type == Calls.MISSED_TYPE || it.type == Calls.REJECTED_TYPE || it.type == Calls.BLOCKED_TYPE }
             else -> allCalls
         }
         adapter.submitItems(groupCallsByDate(filteredCalls))

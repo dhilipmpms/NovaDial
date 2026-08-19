@@ -122,11 +122,11 @@ class ContactCallHistoryAdapter(
                         showCurrentYear = false,
                         hideTodaysDate = false
                     )
-                    setTextColor(if (call.type == Calls.MISSED_TYPE) missedCallColor else secondaryTextColor)
+                    setTextColor(if (call.type == Calls.MISSED_TYPE || call.type == Calls.REJECTED_TYPE || call.type == Calls.BLOCKED_TYPE) missedCallColor else secondaryTextColor)
                     setTextSize(TypedValue.COMPLEX_UNIT_PX, fontSize * 0.8f)
                 }
 
-                val shouldShowDuration = call.type != Calls.MISSED_TYPE && call.type != Calls.REJECTED_TYPE && call.duration > 0
+                val shouldShowDuration = call.type != Calls.MISSED_TYPE && call.type != Calls.REJECTED_TYPE && call.type != Calls.BLOCKED_TYPE && call.duration > 0
                 itemRecentsDateTimeDurationSeparator.apply {
                     text = "•"
                     setTextColor(textColor)
@@ -158,7 +158,7 @@ class ContactCallHistoryAdapter(
 
                 val drawable = when (call.type) {
                     Calls.OUTGOING_TYPE -> if (call.duration > 0) outgoingCallIcon else redOutgoingCallIcon
-                    Calls.MISSED_TYPE -> missedCallIcon
+                    Calls.MISSED_TYPE, Calls.REJECTED_TYPE, Calls.BLOCKED_TYPE -> missedCallIcon
                     else -> incomingCallIcon
                 }
                 itemRecentsType.setImageDrawable(drawable)

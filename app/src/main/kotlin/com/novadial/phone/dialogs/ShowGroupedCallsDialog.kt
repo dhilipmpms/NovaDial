@@ -39,7 +39,7 @@ class ShowGroupedCallsDialog(
 
             val incomingCalls =
                 recentCalls.count {
-                    it.type == CallLog.Calls.INCOMING_TYPE
+                    it.type == CallLog.Calls.INCOMING_TYPE || it.type == CallLog.Calls.ANSWERED_EXTERNALLY_TYPE
                 }
 
             val outgoingCalls =
@@ -49,7 +49,7 @@ class ShowGroupedCallsDialog(
 
             val missedCalls =
                 recentCalls.count {
-                    it.type == CallLog.Calls.MISSED_TYPE
+                    it.type == CallLog.Calls.MISSED_TYPE || it.type == CallLog.Calls.REJECTED_TYPE || it.type == CallLog.Calls.BLOCKED_TYPE
                 }
 
             binding.totalCalls.text =

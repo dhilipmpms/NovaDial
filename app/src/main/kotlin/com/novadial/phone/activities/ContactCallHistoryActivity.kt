@@ -523,9 +523,9 @@ class ContactCallHistoryActivity : SimpleActivity() {
             SimpleContactsHelper(this@ContactCallHistoryActivity).loadContactImage(call.photoUri, contactImage, call.name)
 
             totalCallsValue.text = "${getString(R.string.total)}\n${calls.size}"
-            incomingCallsValue.text = "${getString(R.string.incoming)}\n${calls.count { it.type == Calls.INCOMING_TYPE }}"
+            incomingCallsValue.text = "${getString(R.string.incoming)}\n${calls.count { it.type == Calls.INCOMING_TYPE || it.type == Calls.ANSWERED_EXTERNALLY_TYPE }}"
             outgoingCallsValue.text = "${getString(R.string.outgoing)}\n${calls.count { it.type == Calls.OUTGOING_TYPE }}"
-            missedCallsValue.text = "${getString(R.string.missed)}\n${calls.count { it.type == Calls.MISSED_TYPE }}"
+            missedCallsValue.text = "${getString(R.string.missed)}\n${calls.count { it.type == Calls.MISSED_TYPE || it.type == Calls.REJECTED_TYPE || it.type == Calls.BLOCKED_TYPE }}"
             totalCallDurationValue.text = formatSecondsToShortTimeString(calls.sumOf { it.duration })
         }
     }
@@ -565,6 +565,8 @@ class ContactCallHistoryActivity : SimpleActivity() {
                         Calls.OUTGOING_TYPE -> getString(R.string.outgoing)
                         Calls.MISSED_TYPE -> getString(R.string.missed)
                         Calls.REJECTED_TYPE -> getString(R.string.rejected)
+                        Calls.BLOCKED_TYPE -> getString(R.string.blocked)
+                        Calls.ANSWERED_EXTERNALLY_TYPE -> getString(R.string.answered_externally)
                         else -> getString(R.string.incoming)
                     }
                     setTextColor(textColor)
@@ -578,11 +580,11 @@ class ContactCallHistoryActivity : SimpleActivity() {
                         showCurrentYear = false,
                         hideTodaysDate = false
                     )
-                    setTextColor(if (call.type == Calls.MISSED_TYPE) missedCallColor else secondaryTextColor)
+                    setTextColor(if (call.type == Calls.MISSED_TYPE || call.type == Calls.REJECTED_TYPE || call.type == Calls.BLOCKED_TYPE) missedCallColor else secondaryTextColor)
                     setTextSize(TypedValue.COMPLEX_UNIT_PX, fontSize * 0.8f)
                 }
 
-                val shouldShowDuration = call.type != Calls.MISSED_TYPE && call.type != Calls.REJECTED_TYPE && call.duration > 0
+                val shouldShowDuration = call.type != Calls.MISSED_TYPE && call.type != Calls.REJECTED_TYPE && call.type != Calls.BLOCKED_TYPE && call.duration > 0
                 itemRecentsDateTimeDurationSeparator.apply {
                     text = "•"
                     setTextColor(textColor)
@@ -608,7 +610,7 @@ class ContactCallHistoryActivity : SimpleActivity() {
 
                 val drawable = when (call.type) {
                     Calls.OUTGOING_TYPE -> if (call.duration > 0) outgoingCallIcon else redOutgoingCallIcon
-                    Calls.MISSED_TYPE -> missedCallIcon
+                    Calls.MISSED_TYPE, Calls.REJECTED_TYPE, Calls.BLOCKED_TYPE -> missedCallIcon
                     else -> incomingCallIcon
                 }
                 itemRecentsType.setImageDrawable(drawable)
