@@ -39,9 +39,8 @@ import com.novadial.phone.R
 import com.novadial.phone.databinding.ActivitySettingsBinding
 import com.novadial.phone.dialogs.ExportCallHistoryDialog
 import com.novadial.phone.dialogs.ManageVisibleTabsDialog
-import com.novadial.phone.extensions.canLaunchAccountsConfiguration
-import com.novadial.phone.extensions.config
-import com.novadial.phone.extensions.launchAccountsConfiguration
+import com.novadial.phone.extensions.*
+import com.novadial.phone.helpers.ContactsCache
 import com.novadial.phone.helpers.RecentsHelper
 import com.novadial.phone.helpers.RingtoneVolumeHelper
 import com.novadial.phone.models.RecentCall
@@ -114,6 +113,7 @@ class SettingsActivity : SimpleActivity() {
         setupDialPadOpen()
         setupGroupSubsequentCalls()
         setupStartNameWithSurname()
+        setupCustomContactNameFormat()
         setupFormatPhoneNumbers()
         setupDialpadVibrations()
         setupDialpadNumbers()
@@ -356,8 +356,59 @@ class SettingsActivity : SimpleActivity() {
             settingsStartNameWithSurnameHolder.setOnClickListener {
                 settingsStartNameWithSurname.toggle()
                 config.startNameWithSurname = settingsStartNameWithSurname.isChecked
+                invalidateContactNameCaches()
             }
         }
+    }
+
+    private fun setupCustomContactNameFormat() {
+        binding.apply {
+            settingsCustomContactNameFormat.isChecked = config.useCustomContactNameFormat
+            settingsContactNameFormatHolder.beVisibleIf(config.useCustomContactNameFormat)
+
+            settingsCustomContactNameFormatHolder.setOnClickListener {
+                settingsCustomContactNameFormat.toggle()
+                val isChecked = settingsCustomContactNameFormat.isChecked
+                config.useCustomContactNameFormat = isChecked
+                settingsContactNameFormatHolder.beVisibleIf(isChecked)
+                invalidateContactNameCaches()
+            }
+
+            settingsContactNameFormat.text = getContactNameFormatText()
+            settingsContactNameFormatHolder.setOnClickListener {
+                val items = arrayListOf(
+                    RadioItem(FORMAT_FIRST_SURNAME, getString(R.string.format_first_surname)),
+                    RadioItem(FORMAT_SURNAME_COMMA_FIRST, getString(R.string.format_surname_comma_first)),
+                    RadioItem(FORMAT_SURNAME_FIRST, getString(R.string.format_surname_first)),
+                    RadioItem(FORMAT_SURNAME_FIRST_MIDDLE, getString(R.string.format_surname_first_middle)),
+                    RadioItem(FORMAT_FIRST_MIDDLE_SURNAME, getString(R.string.format_first_middle_surname))
+                )
+
+                RadioGroupDialog(this@SettingsActivity, items, config.customContactNameFormat) {
+                    config.customContactNameFormat = it as Int
+                    settingsContactNameFormat.text = getContactNameFormatText()
+                    invalidateContactNameCaches()
+                }
+            }
+        }
+    }
+
+    private fun getContactNameFormatText(): String {
+        return getString(
+            when (config.customContactNameFormat) {
+                FORMAT_FIRST_SURNAME -> R.string.format_first_surname
+                FORMAT_SURNAME_COMMA_FIRST -> R.string.format_surname_comma_first
+                FORMAT_SURNAME_FIRST -> R.string.format_surname_first
+                FORMAT_SURNAME_FIRST_MIDDLE -> R.string.format_surname_first_middle
+                FORMAT_FIRST_MIDDLE_SURNAME -> R.string.format_first_middle_surname
+                else -> R.string.format_first_surname
+            }
+        )
+    }
+
+    private fun invalidateContactNameCaches() {
+        ContactsCache.invalidate()
+        RecentsHelper(this).invalidateCache()
     }
 
     private fun setupFormatPhoneNumbers() {

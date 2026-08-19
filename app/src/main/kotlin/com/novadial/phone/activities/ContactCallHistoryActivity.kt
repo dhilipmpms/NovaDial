@@ -54,8 +54,10 @@ import com.novadial.phone.databinding.ActivityContactCallHistoryBinding
 import com.novadial.phone.databinding.ItemRecentCallBinding
 import com.novadial.phone.extensions.areMultipleSIMsAvailable
 import com.novadial.phone.extensions.config
+import com.novadial.phone.extensions.getNameToDisplay
 import com.novadial.phone.extensions.startCallWithConfirmationCheck
 import com.novadial.phone.extensions.startNovaContactDetailsIntent
+import com.novadial.phone.helpers.ContactsCache
 import com.novadial.phone.helpers.RecentsHelper
 import com.novadial.phone.models.RecentCall
 
@@ -254,18 +256,23 @@ class ContactCallHistoryActivity : SimpleActivity() {
                         contactId = if (idIndex >= 0) cursor.getLong(idIndex) else null
                         isFavorite = if (starredIndex >= 0) cursor.getInt(starredIndex) == 1 else false
                         val photoUri = if (photoUriIndex >= 0) cursor.getString(photoUriIndex) ?: "" else ""
-                        val name = if (nameIndex >= 0) cursor.getString(nameIndex) ?: seedCall.name else seedCall.name
-                        contactName = name
+                        var name = if (nameIndex >= 0) cursor.getString(nameIndex) ?: seedCall.name else seedCall.name
                         
-                        runOnUiThread {
-                            binding.contactSettingsCard.beVisible()
-                            binding.socialAppsCard.beVisible()
-                            invalidateOptionsMenu()
-                            if (name != seedCall.name) {
-                                binding.contactName.text = name
+                        ContactsCache.getContacts(this@ContactCallHistoryActivity) { contacts ->
+                            val matchingContact = contacts.firstOrNull { it.doesHavePhoneNumber(seedCall.phoneNumber) }
+                            if (matchingContact != null) {
+                                name = matchingContact.getNameToDisplay(this@ContactCallHistoryActivity)
                             }
-                            SimpleContactsHelper(this@ContactCallHistoryActivity).loadContactImage(photoUri, binding.contactImage, name)
-                            updateRingtoneSubtitle()
+                            contactName = name
+
+                            runOnUiThread {
+                                binding.contactSettingsCard.beVisible()
+                                binding.socialAppsCard.beVisible()
+                                invalidateOptionsMenu()
+                                binding.contactName.text = name
+                                SimpleContactsHelper(this@ContactCallHistoryActivity).loadContactImage(photoUri, binding.contactImage, name)
+                                updateRingtoneSubtitle()
+                            }
                         }
                     } else {
                         runOnUiThread {

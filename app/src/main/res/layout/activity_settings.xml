@@ -232,6 +232,71 @@
             </RelativeLayout>
 
             <RelativeLayout
+                android:id="@+id/settings_custom_contact_name_format_holder"
+                style="@style/SettingsHolderTextViewStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="vertical"
+                    android:layout_toStartOf="@id/settings_custom_contact_name_format"
+                    android:layout_alignParentStart="true"
+                    android:layout_centerVertical="true"
+                    android:paddingEnd="16dp"
+                    tools:ignore="UseCompoundDrawables">
+
+                    <org.fossify.commons.views.MyTextView
+                        android:id="@+id/settings_custom_contact_name_format_label"
+                        style="@style/SettingsTextLabelStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/custom_contact_name_format" />
+
+                    <org.fossify.commons.views.MyTextView
+                        android:id="@+id/settings_custom_contact_name_format_description"
+                        style="@style/SettingsTextValueStyle"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="@string/custom_contact_name_format_summary" />
+                </LinearLayout>
+
+                <org.fossify.commons.views.MyMaterialSwitch
+                    android:id="@+id/settings_custom_contact_name_format"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_alignParentEnd="true"
+                    android:layout_centerVertical="true"
+                    android:clickable="false"
+                    android:focusable="false" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/settings_contact_name_format_holder"
+                style="@style/SettingsHolderTextViewStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/settings_contact_name_format_label"
+                    style="@style/SettingsTextLabelStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/contact_name_format" />
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/settings_contact_name_format"
+                    style="@style/SettingsTextValueStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/settings_contact_name_format_label"
+                    tools:text="@string/format_first_surname" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
                 android:id="@+id/settings_format_phone_numbers_holder"
                 style="@style/SettingsHolderSwitchStyle"
                 android:layout_width="match_parent"

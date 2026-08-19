@@ -33,6 +33,7 @@ import com.novadial.phone.activities.SimpleActivity
 import com.novadial.phone.extensions.areMultipleSIMsAvailable
 import com.novadial.phone.extensions.callContactWithSim
 import com.novadial.phone.extensions.config
+import com.novadial.phone.extensions.getNameToDisplay
 import com.novadial.phone.extensions.startContactDetailsIntent
 import com.novadial.phone.extensions.startNovaContactDetailsIntent
 import com.novadial.phone.interfaces.RefreshItemsListener
@@ -265,7 +266,7 @@ class ContactsAdapter(
         val itemsCnt = selectedKeys.size
         val firstItem = getSelectedItems().firstOrNull() ?: return
         val items = if (itemsCnt == 1) {
-            "\"${firstItem.getNameToDisplay()}\""
+            "\"${firstItem.getNameToDisplay(activity)}\""
         } else {
             resources.getQuantityString(R.plurals.delete_contacts, itemsCnt, itemsCnt)
         }
@@ -317,7 +318,7 @@ class ContactsAdapter(
         val contact = contacts.firstOrNull { selectedKeys.contains(it.rawId) } ?: return
         val manager = activity.shortcutManager
         if (manager.isRequestPinShortcutSupported) {
-            SimpleContactsHelper(activity).getShortcutImage(contact.photoUri, contact.getNameToDisplay()) { image ->
+            SimpleContactsHelper(activity).getShortcutImage(contact.photoUri, contact.getNameToDisplay(activity)) { image ->
                 activity.runOnUiThread {
                     activity.handlePermission(PERMISSION_CALL_PHONE) { hasPermission ->
                         val action = if (hasPermission) Intent.ACTION_CALL else Intent.ACTION_DIAL
@@ -326,7 +327,7 @@ class ContactsAdapter(
                         }
 
                         val shortcut = ShortcutInfo.Builder(activity, contact.hashCode().toString())
-                            .setShortLabel(contact.getNameToDisplay())
+                            .setShortLabel(contact.getNameToDisplay(activity))
                             .setIcon(Icon.createWithBitmap(image))
                             .setIntent(intent)
                             .build()
@@ -376,7 +377,7 @@ class ContactsAdapter(
                 setTextColor(textColor)
                 setTextSize(TypedValue.COMPLEX_UNIT_PX, fontSize)
 
-                val name = contact.getNameToDisplay()
+                val name = contact.getNameToDisplay(activity)
                 text = if (textToHighlight.isEmpty()) {
                     name
                 } else {
@@ -422,7 +423,7 @@ class ContactsAdapter(
             }
 
             if (!activity.isDestroyed) {
-                SimpleContactsHelper(root.context).loadContactImage(contact.photoUri, itemContactImage, contact.getNameToDisplay())
+                SimpleContactsHelper(root.context).loadContactImage(contact.photoUri, itemContactImage, contact.getNameToDisplay(activity))
             }
         }
     }

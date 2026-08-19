@@ -14,6 +14,7 @@ import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.commons.helpers.MyContactsContentProvider
 import com.novadial.phone.R
 import com.novadial.phone.activities.MainActivity
+import com.novadial.phone.extensions.getNameToDisplay
 import com.novadial.phone.receivers.MissedCallActionReceiver
 
 object MissedCallNotifier {
@@ -135,7 +136,7 @@ object MissedCallNotifier {
                 }
 
                 val contact = contacts.firstOrNull { it.doesHavePhoneNumber(number) }
-                val name = contact?.getNameToDisplay() ?: number
+                val name = contact?.getNameToDisplay(context) ?: number
                 callback(name)
             }
         }

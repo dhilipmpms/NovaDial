@@ -17,6 +17,7 @@ import com.novadial.phone.adapters.SpeedDialAdapter
 import com.novadial.phone.databinding.ActivityManageSpeedDialBinding
 import com.novadial.phone.dialogs.SelectContactDialog
 import com.novadial.phone.extensions.config
+import com.novadial.phone.extensions.getNameToDisplay
 import com.novadial.phone.interfaces.RemoveSpeedDialListener
 import com.novadial.phone.models.SpeedDial
 
@@ -78,7 +79,7 @@ class ManageSpeedDialActivity : SimpleActivity(), RemoveSpeedDialListener {
                     RadioGroupDialog(this, ArrayList(radioItems), checkedItemId = checkedItemId) { selectedValue ->
                         val selectedNumber = selectedValue as PhoneNumber
                         speedDialValues.first { it.id == clickedContact.id }.apply {
-                            displayName = selectedContact.getNameToDisplay()
+                            displayName = selectedContact.getNameToDisplay(this@ManageSpeedDialActivity)
                             number = selectedNumber.value
                             type = selectedNumber.type
                             label = selectedNumber.label
@@ -87,7 +88,7 @@ class ManageSpeedDialActivity : SimpleActivity(), RemoveSpeedDialListener {
                     }
                 } else {
                     speedDialValues.first { it.id == clickedContact.id }.apply {
-                        displayName = selectedContact.getNameToDisplay()
+                        displayName = selectedContact.getNameToDisplay(this@ManageSpeedDialActivity)
                         number = selectedContact.phoneNumbers.first().value
                     }
                     updateAdapter()

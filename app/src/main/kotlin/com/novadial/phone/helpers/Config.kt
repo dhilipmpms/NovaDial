@@ -171,4 +171,12 @@ class Config(context: Context) : BaseConfig(context) {
     var isRingtoneVolumeBoosted: Boolean
         get() = prefs.getBoolean(IS_RINGTONE_VOLUME_BOOSTED, false)
         set(isRingtoneVolumeBoosted) = prefs.edit().putBoolean(IS_RINGTONE_VOLUME_BOOSTED, isRingtoneVolumeBoosted).apply()
+
+    var useCustomContactNameFormat: Boolean
+        get() = prefs.getBoolean(com.novadial.phone.extensions.USE_CUSTOM_CONTACT_NAME_FORMAT, false)
+        set(useCustomContactNameFormat) = prefs.edit().putBoolean(com.novadial.phone.extensions.USE_CUSTOM_CONTACT_NAME_FORMAT, useCustomContactNameFormat).apply()
+
+    var customContactNameFormat: Int
+        get() = prefs.getInt(com.novadial.phone.extensions.CUSTOM_CONTACT_NAME_FORMAT, com.novadial.phone.extensions.FORMAT_FIRST_SURNAME)
+        set(customContactNameFormat) = prefs.edit().putInt(com.novadial.phone.extensions.CUSTOM_CONTACT_NAME_FORMAT, customContactNameFormat).apply()
 }

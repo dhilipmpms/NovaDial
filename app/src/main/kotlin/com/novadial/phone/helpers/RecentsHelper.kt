@@ -15,6 +15,7 @@ import com.novadial.phone.R
 import com.novadial.phone.activities.SimpleActivity
 import com.novadial.phone.extensions.getAvailableSIMCardLabels
 import com.novadial.phone.extensions.config
+import com.novadial.phone.extensions.getNameToDisplay
 import kotlinx.serialization.json.Json
 import kotlinx.serialization.encodeToString
 import com.novadial.phone.models.CallLogItem
@@ -499,7 +500,7 @@ class RecentsHelper(private val context: Context) {
 
         val mapStartTime = System.currentTimeMillis()
         contacts.forEach { contact ->
-            val displayName = contact.getNameToDisplay()
+            val displayName = contact.getNameToDisplay(context)
             contact.phoneNumbers.forEach { pn ->
                 // Exact-value maps
                 if (pn.value.isNotBlank()) {
@@ -833,7 +834,7 @@ class RecentsHelper(private val context: Context) {
                                             normalizedNumber.length - COMPARABLE_PHONE_NUMBER_LENGTH
                                         )
                                     ) {
-                                        contactsNumbersMap[number] = contact.getNameToDisplay()
+                                        contactsNumbersMap[number] = contact.getNameToDisplay(context)
                                         return@firstOrNull true
                                     }
                                 }
@@ -1012,7 +1013,7 @@ class RecentsHelper(private val context: Context) {
 
                 if (name == null && !isUnknownNumber && !number.isNullOrBlank()) {
                     val matchingContact = contacts.firstOrNull { c -> c.doesHavePhoneNumber(number) }
-                    name = matchingContact?.getNameToDisplay()
+                    name = matchingContact?.getNameToDisplay(context)
                 }
                 if (name.isNullOrBlank() || name == "-1") {
                     name = if (isUnknownNumber) context.getString(R.string.unknown) else number.orEmpty()
