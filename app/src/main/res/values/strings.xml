@@ -163,8 +163,13 @@
     <string name="features_locked"></string>
     <string name="update_thank_you"></string>
 
-    <!--
-        Haven't found some strings? There's more at
-        https://github.com/NovaDialOrg/Commons/tree/master/commons/src/main/res
-    -->
+    <!-- Custom Contact Name Format -->
+    <string name="custom_contact_name_format">Custom contact name format</string>
+    <string name="custom_contact_name_format_summary">Customize how contact names are displayed</string>
+    <string name="contact_name_format">Contact name format</string>
+    <string name="format_first_surname">First name Surname</string>
+    <string name="format_surname_comma_first">Surname, First name</string>
+    <string name="format_surname_first">Surname First name</string>
+    <string name="format_surname_first_middle">Surname First name Middle name</string>
+    <string name="format_first_middle_surname">First name Middle name Surname</string>
 </resources>

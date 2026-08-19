@@ -54,6 +54,7 @@ import com.novadial.phone.databinding.DialogEditContactBinding
 import com.novadial.phone.databinding.ItemContactPhoneNumberBinding
 import com.novadial.phone.databinding.ItemEditPhoneNumberBinding
 import com.novadial.phone.extensions.config
+import com.novadial.phone.extensions.getFormattedContactName
 import com.novadial.phone.extensions.startCallWithConfirmationCheck
 import com.novadial.phone.helpers.ContactsCache
 import java.io.ByteArrayOutputStream
@@ -316,12 +317,8 @@ class ContactDetailsActivity : SimpleActivity() {
                         middleName = if (middleIdx >= 0) cursor.getString(middleIdx) ?: "" else ""
                         surname = if (familyIdx >= 0) cursor.getString(familyIdx) ?: "" else ""
 
-                        val structuredDisplayName = listOf(firstName, middleName, surname).filter { it.isNotBlank() }.joinToString(" ")
-                        if (structuredDisplayName.isNotBlank()) {
-                            contactName = structuredDisplayName
-                        } else if (contactName.isEmpty() && displayIdx >= 0) {
-                            contactName = cursor.getString(displayIdx) ?: ""
-                        }
+                        val rawFallback = if (displayIdx >= 0) cursor.getString(displayIdx) ?: contactName else contactName
+                        contactName = getFormattedContactName(firstName, middleName, surname, rawFallback, this@ContactDetailsActivity)
                     }
                 }
 

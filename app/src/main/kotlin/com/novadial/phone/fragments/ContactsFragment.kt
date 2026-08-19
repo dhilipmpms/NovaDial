@@ -28,6 +28,7 @@ import com.novadial.phone.adapters.ContactsAdapter
 import com.novadial.phone.databinding.FragmentContactsBinding
 import com.novadial.phone.databinding.FragmentLettersLayoutBinding
 import com.novadial.phone.extensions.config
+import com.novadial.phone.extensions.getNameToDisplay
 import com.novadial.phone.extensions.handleGenericContactClick
 import com.novadial.phone.extensions.launchCreateNewContactIntent
 import com.novadial.phone.extensions.setupWithContacts
@@ -168,7 +169,7 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) : MyViewPag
         val fixedText = text.trim().replace("\\s+".toRegex(), " ")
         val shouldNormalize = fixedText.normalizeString() == fixedText
         val filtered = allContacts.filter { contact ->
-            getProperText(contact.getNameToDisplay(), shouldNormalize).contains(fixedText, true) ||
+            getProperText(contact.getNameToDisplay(context), shouldNormalize).contains(fixedText, true) ||
                 getProperText(contact.nickname, shouldNormalize).contains(fixedText, true) ||
                 (fixedText.toLongOrNull() != null && contact.doesContainPhoneNumber(fixedText, true)) ||
                 contact.emails.any { it.value.contains(fixedText, true) } ||
@@ -181,7 +182,7 @@ class ContactsFragment(context: Context, attributeSet: AttributeSet) : MyViewPag
         } as ArrayList
 
         filtered.sortBy {
-            val nameToDisplay = it.getNameToDisplay()
+            val nameToDisplay = it.getNameToDisplay(context)
             !getProperText(nameToDisplay, shouldNormalize).startsWith(fixedText, true) && !nameToDisplay.contains(fixedText, true)
         }
 

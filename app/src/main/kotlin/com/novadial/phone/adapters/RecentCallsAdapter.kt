@@ -59,6 +59,7 @@ import com.novadial.phone.extensions.areMultipleSIMsAvailable
 import com.novadial.phone.extensions.callContactWithSimWithConfirmationCheck
 import com.novadial.phone.extensions.config
 import com.novadial.phone.extensions.getDayCode
+import com.novadial.phone.extensions.getNameToDisplay
 import com.novadial.phone.extensions.startAddContactIntent
 import com.novadial.phone.extensions.startCallWithConfirmationCheck
 import com.novadial.phone.extensions.startContactDetailsIntent
@@ -508,7 +509,7 @@ class RecentCallsAdapter(
                 itemRecentsHolder.isSelected = selectedKeys.contains(call.id)
                 itemRecentsHolder.setBackgroundResource(R.drawable.ripple_all_corners)
                 val matchingContact = findContactByCall(call)
-                val name = matchingContact?.getNameToDisplay() ?: call.name
+                val name = matchingContact?.getNameToDisplay(activity) ?: call.name
                 val formatPhoneNumbers = activity.config.formatPhoneNumbers
                 var nameToShow = if (name == call.phoneNumber && formatPhoneNumbers) {
                     SpannableString(name.formatPhoneNumber())

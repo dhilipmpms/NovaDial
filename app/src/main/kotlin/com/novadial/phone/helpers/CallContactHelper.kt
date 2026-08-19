@@ -12,6 +12,7 @@ import org.fossify.commons.helpers.MyContactsContentProvider
 import org.fossify.commons.helpers.ensureBackgroundThread
 import com.novadial.phone.R
 import com.novadial.phone.extensions.config
+import com.novadial.phone.extensions.getNameToDisplay
 import com.novadial.phone.extensions.isConference
 import com.novadial.phone.models.CallContact
 
@@ -41,7 +42,7 @@ fun getFastCallContact(context: Context, call: Call?): CallContact {
         // Fast in-memory cache lookup
         val cached = ContactsCache.getContactByNumber(rawNumber)
         if (cached != null) {
-            val name = cached.getNameToDisplay()
+            val name = cached.getNameToDisplay(context)
             val photoUri = cached.photoUri
             var numberLabel = ""
             if (cached.phoneNumbers.size > 1) {
@@ -163,7 +164,7 @@ fun getCallContact(context: Context, call: Call?, callback: (CallContact) -> Uni
                             label = context.getPhoneNumberTypeText(specificPhoneNumber.type, specificPhoneNumber.label)
                         }
                     }
-                    CallContact(name = contact.getNameToDisplay(), photoUri = contact.photoUri, number = formattedNumber, numberLabel = label)
+                    CallContact(name = contact.getNameToDisplay(context), photoUri = contact.photoUri, number = formattedNumber, numberLabel = label)
                 } else {
                     fastLookup ?: CallContact(name = formattedNumber, photoUri = "", number = formattedNumber, numberLabel = "")
                 }
