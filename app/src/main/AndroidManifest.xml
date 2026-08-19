@@ -101,6 +101,13 @@
             android:parentActivityName=".activities.MainActivity" />
 
         <activity
+            android:name=".activities.ContactDetailsActivity"
+            android:configChanges="orientation|screenSize"
+            android:exported="false"
+            android:label="@string/contact_details"
+            android:parentActivityName=".activities.MainActivity" />
+
+        <activity
             android:name=".activities.ContactFullHistoryActivity"
             android:configChanges="orientation|screenSize"
             android:exported="false"

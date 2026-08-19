@@ -6,6 +6,10 @@
 
     <!-- Contacts -->
     <string name="could_not_access_contacts">Could not access your contacts</string>
+    <string name="contact_details">Contact Details</string>
+    <string name="no_phone_number_found">No phone number found</string>
+    <string name="phone_number">Phone number</string>
+    <string name="phone_numbers">Phone numbers</string>
 
     <!-- Recents -->
     <string name="no_previous_calls">No previous calls have been found</string>

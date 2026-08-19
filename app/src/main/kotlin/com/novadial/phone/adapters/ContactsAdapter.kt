@@ -34,6 +34,7 @@ import com.novadial.phone.extensions.areMultipleSIMsAvailable
 import com.novadial.phone.extensions.callContactWithSim
 import com.novadial.phone.extensions.config
 import com.novadial.phone.extensions.startContactDetailsIntent
+import com.novadial.phone.extensions.startNovaContactDetailsIntent
 import com.novadial.phone.interfaces.RefreshItemsListener
 import java.util.Collections
 
@@ -221,15 +222,10 @@ class ContactsAdapter(
 
     @SuppressLint("NotifyDataSetChanged")
     fun updateItems(newItems: List<Contact>, highlightText: String = "") {
-        if (newItems.hashCode() != contacts.hashCode()) {
-            contacts = ArrayList(newItems)
-            textToHighlight = highlightText
-            notifyDataSetChanged()
-            finishActMode()
-        } else if (textToHighlight != highlightText) {
-            textToHighlight = highlightText
-            notifyDataSetChanged()
-        }
+        contacts = ArrayList(newItems)
+        textToHighlight = highlightText
+        notifyDataSetChanged()
+        finishActMode()
     }
 
     @SuppressLint("MissingPermission")
@@ -262,7 +258,7 @@ class ContactsAdapter(
 
     private fun viewContactDetails() {
         val contact = getSelectedItems().firstOrNull() ?: return
-        activity.startContactDetailsIntent(contact)
+        activity.startNovaContactDetailsIntent(contact)
     }
 
     private fun askConfirmDelete() {

@@ -396,7 +396,13 @@ class RecentsHelper(private val context: Context) {
                         contacts.addAll(privateContacts)
                     }
 
-                    val matchingContact = contacts.firstOrNull { it.doesHavePhoneNumber(phoneNumber) }
+                    val targetCanonical = com.novadial.phone.extensions.getCanonicalPhoneNumber(phoneNumber)
+                    val matchingContact = contacts.firstOrNull { contact ->
+                        contact.phoneNumbers.any { p ->
+                            com.novadial.phone.extensions.getCanonicalPhoneNumber(p.value) == targetCanonical ||
+                            (p.normalizedNumber.isNotBlank() && com.novadial.phone.extensions.getCanonicalPhoneNumber(p.normalizedNumber) == targetCanonical)
+                        } || contact.doesHavePhoneNumber(phoneNumber)
+                    }
                     val numbersToMatch = (matchingContact?.phoneNumbers
                         ?.flatMap { listOf(it.value, it.normalizedNumber) }
                         ?: listOf(phoneNumber))

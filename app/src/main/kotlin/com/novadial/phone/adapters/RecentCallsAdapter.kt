@@ -62,6 +62,7 @@ import com.novadial.phone.extensions.getDayCode
 import com.novadial.phone.extensions.startAddContactIntent
 import com.novadial.phone.extensions.startCallWithConfirmationCheck
 import com.novadial.phone.extensions.startContactDetailsIntent
+import com.novadial.phone.extensions.startNovaContactDetailsIntent
 import com.novadial.phone.helpers.RecentsHelper
 import com.novadial.phone.interfaces.RefreshItemsListener
 import com.novadial.phone.models.CallLogItem
@@ -345,12 +346,27 @@ class RecentCallsAdapter(
     }
 
     private fun findContactByCall(recentCall: RecentCall): Contact? {
-        return (activity as MainActivity).cachedContacts.find { it.name == recentCall.name && it.doesHavePhoneNumber(recentCall.phoneNumber) }
+        val callCanonical = com.novadial.phone.extensions.getCanonicalPhoneNumber(recentCall.phoneNumber)
+        if (callCanonical.isNotEmpty()) {
+            val found = (activity as MainActivity).cachedContacts.find { contact ->
+                contact.phoneNumbers.any { p ->
+                    com.novadial.phone.extensions.getCanonicalPhoneNumber(p.value) == callCanonical ||
+                    (p.normalizedNumber.isNotBlank() && com.novadial.phone.extensions.getCanonicalPhoneNumber(p.normalizedNumber) == callCanonical)
+                }
+            }
+            if (found != null) return found
+        }
+        return (activity as MainActivity).cachedContacts.find { it.doesHavePhoneNumber(recentCall.phoneNumber) }
     }
 
     private fun launchContactDetailsIntent(contact: Contact?) {
         if (contact != null) {
-            activity.startContactDetailsIntent(contact)
+            activity.startNovaContactDetailsIntent(contact)
+        } else {
+            val selectedCall = getSelectedItems().firstOrNull()
+            if (selectedCall != null) {
+                activity.startNovaContactDetailsIntent(selectedCall.phoneNumber, selectedCall.name)
+            }
         }
     }
 
