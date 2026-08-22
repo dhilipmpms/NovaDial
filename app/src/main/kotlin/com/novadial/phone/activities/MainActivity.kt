@@ -639,20 +639,7 @@ class MainActivity : SimpleActivity() {
     }
 
     fun cacheContacts() {
-        // Warm the ContactsCache used by RecentsHelper so that by the time the
-        // Recents tab loads, contacts are already in memory (cache hit → instant return).
-        ContactsCache.getContacts(this) { /* fire-and-forget warm-up */ }
-
-        val privateCursor = getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
-        ContactsHelper(this).getContacts(getAll = true, showOnlyContactsWithNumbers = true) { contacts ->
-            if (SMT_PRIVATE !in config.ignoredContactSources) {
-                val privateContacts = MyContactsContentProvider.getContacts(this, privateCursor)
-                if (privateContacts.isNotEmpty()) {
-                    contacts.addAll(privateContacts)
-                    contacts.sort()
-                }
-            }
-
+        ContactsCache.getContacts(this) { contacts ->
             try {
                 cachedContacts.clear()
                 cachedContacts.addAll(contacts)
@@ -669,5 +656,17 @@ class MainActivity : SimpleActivity() {
     @Subscribe(threadMode = ThreadMode.MAIN)
     fun onNewCallLogAdded(event: Events.NewCallLogAdded) {
         getRecentsFragment()?.addNewCallLogEntry(event.newCall)
+    }
+
+    @Subscribe(threadMode = ThreadMode.MAIN)
+    fun onContactsUpdated(event: Events.ContactsUpdated) {
+        ContactsCache.getContacts(this, forceRefresh = true) {
+            runOnUiThread {
+                cacheContacts()
+                getContactsFragment()?.refreshItems(invalidate = true)
+                getFavoritesFragment()?.refreshItems(invalidate = true)
+                getRecentsFragment()?.refreshItems(invalidate = false)
+            }
+        }
     }
 }

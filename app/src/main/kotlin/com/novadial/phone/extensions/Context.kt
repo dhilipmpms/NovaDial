@@ -10,6 +10,9 @@ import android.media.AudioManager
 import android.net.Uri
 import android.os.PowerManager
 import android.telecom.TelecomManager
+import android.provider.ContactsContract
+import com.novadial.phone.activities.ContactDetailsActivity
+import com.novadial.phone.helpers.ContactsCache
 import org.fossify.commons.extensions.launchActivityIntent
 import org.fossify.commons.extensions.telecomManager
 import org.fossify.commons.helpers.KEY_PHONE
@@ -90,10 +93,42 @@ fun Context.launchAccountsConfiguration() {
 }
 
 fun Activity.startAddContactIntent(phoneNumber: String) {
-    Intent().apply {
-        action = Intent.ACTION_INSERT_OR_EDIT
-        type = "vnd.android.cursor.item/contact"
-        putExtra(KEY_PHONE, phoneNumber)
-        launchActivityIntent(this)
+    ensureBackgroundThread {
+        var resolvedContactId: Long? = null
+        try {
+            val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNumber))
+            val projection = arrayOf(ContactsContract.PhoneLookup._ID)
+            contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) {
+                    val idIdx = cursor.getColumnIndex(ContactsContract.PhoneLookup._ID)
+                    if (idIdx >= 0) {
+                        resolvedContactId = cursor.getLong(idIdx)
+                    }
+                }
+            }
+        } catch (e: Exception) {
+            // Ignore
+        }
+
+        if (resolvedContactId == null || resolvedContactId!! <= 0L) {
+            val cacheMatch = ContactsCache.getContactByNumber(phoneNumber)
+            if (cacheMatch != null && cacheMatch.contactId > 0) {
+                resolvedContactId = cacheMatch.contactId.toLong()
+            }
+        }
+
+        runOnUiThread {
+            Intent(this@startAddContactIntent, ContactDetailsActivity::class.java).apply {
+                if (resolvedContactId != null && resolvedContactId!! > 0L) {
+                    putExtra(ContactDetailsActivity.EXTRA_CONTACT_ID, resolvedContactId!!)
+                    putExtra(ContactDetailsActivity.EXTRA_AUTO_EDIT, true)
+                } else {
+                    putExtra(ContactDetailsActivity.EXTRA_IS_NEW_CONTACT, true)
+                    putExtra(ContactDetailsActivity.EXTRA_PREFILL_PHONE, phoneNumber)
+                }
+                launchActivityIntent(this)
+            }
+        }
     }
 }
+

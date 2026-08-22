@@ -40,13 +40,8 @@ class ManageSpeedDialActivity : SimpleActivity(), RemoveSpeedDialListener {
         speedDialValues = config.getSpeedDialValues()
         updateAdapter()
 
-        ContactsHelper(this).getContacts(showOnlyContactsWithNumbers = true) { contacts ->
-            allContacts.addAll(contacts)
-
-            val privateCursor = getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
-            val privateContacts = MyContactsContentProvider.getContacts(this, privateCursor)
-            allContacts.addAll(privateContacts)
-            allContacts.sort()
+        com.novadial.phone.helpers.ContactsCache.getContacts(this) { contacts ->
+            allContacts = contacts
         }
 
         updateTextColors(binding.manageSpeedDialScrollview)

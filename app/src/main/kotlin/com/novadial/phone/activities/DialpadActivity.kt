@@ -43,8 +43,9 @@ import org.fossify.commons.helpers.NavigationIcon
 import org.fossify.commons.helpers.REQUEST_CODE_SET_DEFAULT_DIALER
 import org.fossify.commons.helpers.isOreoPlus
 import org.fossify.commons.models.contacts.Contact
-import com.novadial.phone.R
 import com.novadial.phone.adapters.ContactsAdapter
+import com.novadial.phone.helpers.ContactsCache
+import com.novadial.phone.R
 import com.novadial.phone.databinding.ActivityDialpadBinding
 import com.novadial.phone.extensions.addCharacter
 import com.novadial.phone.extensions.areMultipleSIMsAvailable
@@ -55,7 +56,7 @@ import com.novadial.phone.extensions.getKeyEvent
 import com.novadial.phone.extensions.setupWithContacts
 import com.novadial.phone.extensions.startAddContactIntent
 import com.novadial.phone.extensions.startCallWithConfirmationCheck
-import com.novadial.phone.extensions.startContactDetailsIntent
+import com.novadial.phone.extensions.startNovaContactDetailsIntent
 import com.novadial.phone.helpers.DIALPAD_TONE_LENGTH_MS
 import com.novadial.phone.helpers.RecentsHelper
 import com.novadial.phone.helpers.ToneGeneratorHelper
@@ -198,8 +199,8 @@ class DialpadActivity : SimpleActivity() {
             dialpadInput.disableKeyboard()
         }
 
-        ContactsHelper(this).getContacts(showOnlyContactsWithNumbers = true) { allContacts ->
-            gotContacts(allContacts)
+        ContactsCache.getContacts(this) { allContacts ->
+            gotContacts(ArrayList(allContacts))
         }
 
         val properPrimaryColor = getNovaAccentColor()
@@ -343,7 +344,7 @@ class DialpadActivity : SimpleActivity() {
                 clearInputWithDelay()
             },
             profileIconClick = {
-                startContactDetailsIntent(it as Contact)
+                startNovaContactDetailsIntent(it as Contact)
             }).apply {
             binding.dialpadList.adapter = this
         }

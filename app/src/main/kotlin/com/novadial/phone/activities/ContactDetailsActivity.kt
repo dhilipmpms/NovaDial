@@ -30,6 +30,7 @@ import androidx.core.content.FileProvider
 import com.bumptech.glide.Glide
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
+import org.fossify.commons.dialogs.ConfirmationDialog
 import org.fossify.commons.extensions.adjustAlpha
 import org.fossify.commons.extensions.applyColorFilter
 import org.fossify.commons.extensions.beGone
@@ -57,6 +58,8 @@ import com.novadial.phone.extensions.config
 import com.novadial.phone.extensions.getFormattedContactName
 import com.novadial.phone.extensions.startCallWithConfirmationCheck
 import com.novadial.phone.helpers.ContactsCache
+import com.novadial.phone.models.Events
+import org.greenrobot.eventbus.EventBus
 import java.io.ByteArrayOutputStream
 import java.io.File
 
@@ -73,6 +76,12 @@ class ContactDetailsActivity : SimpleActivity() {
     private var surname: String = ""
     private var currentPhotoUriString: String = ""
 
+    private var isNewContact = false
+    private var autoEditPending = false
+    private var isSavingContact = false
+    private var prefillName = ""
+    private var prefillPhone = ""
+
     private val phoneNumbersList = ArrayList<PhoneNumberData>()
 
     data class PhoneNumberData(
@@ -86,6 +95,19 @@ class ContactDetailsActivity : SimpleActivity() {
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
 
+        isNewContact = intent.getBooleanExtra(EXTRA_IS_NEW_CONTACT, false)
+        autoEditPending = intent.getBooleanExtra(EXTRA_AUTO_EDIT, false)
+        prefillName = intent.getStringExtra(EXTRA_PREFILL_NAME)
+            ?: intent.getStringExtra(ContactsContract.Intents.Insert.NAME)
+            ?: intent.getStringExtra("name")
+            ?: ""
+        prefillPhone = intent.getStringExtra(EXTRA_PREFILL_PHONE)
+            ?: intent.getStringExtra(EXTRA_PHONE_NUMBER)
+            ?: intent.getStringExtra(ContactsContract.Intents.Insert.PHONE)
+            ?: intent.getStringExtra("phone")
+            ?: intent.getStringExtra("phone_number")
+            ?: ""
+
         contactId = intent.getLongExtra(EXTRA_CONTACT_ID, -1L)
         if (contactId == -1L) {
             val rawIdExtra = intent.getIntExtra(EXTRA_RAW_ID, -1)
@@ -94,30 +116,64 @@ class ContactDetailsActivity : SimpleActivity() {
             }
         }
 
-        if (contactId == -1L) {
-            val phoneNumber = intent.getStringExtra(EXTRA_PHONE_NUMBER)
-            if (!phoneNumber.isNullOrEmpty()) {
-                try {
-                    val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNumber))
-                    val projection = arrayOf(ContactsContract.PhoneLookup._ID)
-                    contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
-                        if (cursor.moveToFirst()) {
-                            val idIdx = cursor.getColumnIndex(ContactsContract.PhoneLookup._ID)
-                            if (idIdx >= 0) {
-                                contactId = cursor.getLong(idIdx)
-                            }
-                        }
+        val lookupKeyExtra = intent.getStringExtra(EXTRA_LOOKUP_KEY)
+        if (contactId == -1L && !lookupKeyExtra.isNullOrEmpty()) {
+            try {
+                val lookupUri = Uri.withAppendedPath(ContactsContract.Contacts.CONTENT_LOOKUP_URI, lookupKeyExtra)
+                contentResolver.query(lookupUri, arrayOf(ContactsContract.Contacts._ID), null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        contactId = cursor.getLong(0)
                     }
-                } catch (e: Exception) {
-                    // Ignore lookup error
                 }
+            } catch (e: Exception) {
+                // Ignore lookup error
             }
         }
 
-        if (contactId == -1L) {
+        if (contactId == -1L && intent.data != null && (intent.data?.scheme == "content" || intent.data?.authority == ContactsContract.AUTHORITY)) {
+            try {
+                contentResolver.query(intent.data!!, arrayOf(ContactsContract.Contacts._ID), null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        contactId = cursor.getLong(0)
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignore lookup error
+            }
+        }
+
+        val phoneNumber = intent.getStringExtra(EXTRA_PHONE_NUMBER) ?: prefillPhone
+        if (contactId == -1L && !phoneNumber.isNullOrEmpty()) {
+            try {
+                val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(phoneNumber))
+                val projection = arrayOf(ContactsContract.PhoneLookup._ID)
+                contentResolver.query(uri, projection, null, null, null)?.use { cursor ->
+                    if (cursor.moveToFirst()) {
+                        val idIdx = cursor.getColumnIndex(ContactsContract.PhoneLookup._ID)
+                        if (idIdx >= 0) {
+                            contactId = cursor.getLong(idIdx)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                // Ignore lookup error
+            }
+        }
+
+        if (contactId == -1L && !isNewContact && prefillName.isEmpty() && prefillPhone.isEmpty()) {
             toast("Contact not found")
             finish()
             return
+        }
+
+        if (contactId == -1L) {
+            isNewContact = true
+            firstName = prefillName
+            contactName = prefillName
+            if (prefillPhone.isNotEmpty()) {
+                phoneNumbersList.clear()
+                phoneNumbersList.add(PhoneNumberData(number = prefillPhone))
+            }
         }
 
         binding.apply {
@@ -193,6 +249,10 @@ class ContactDetailsActivity : SimpleActivity() {
                 showEditContactDialog()
                 return true
             }
+            R.id.action_delete -> {
+                askConfirmDeleteContact()
+                return true
+            }
         }
         return super.onOptionsItemSelected(item)
     }
@@ -250,6 +310,46 @@ class ContactDetailsActivity : SimpleActivity() {
 
             qrCodeRow.setOnClickListener {
                 showContactQRCode()
+            }
+
+            deleteContactRow.setOnClickListener {
+                askConfirmDeleteContact()
+            }
+        }
+    }
+
+    private fun askConfirmDeleteContact() {
+        if (contactId == -1L) return
+        val question = String.format(getString(R.string.deletion_confirmation), "\"$contactName\"")
+        ConfirmationDialog(this, question) {
+            handlePermission(PERMISSION_WRITE_CONTACTS) { hasPerm ->
+                if (hasPerm) {
+                    deleteCurrentContact()
+                }
+            }
+        }
+    }
+
+    private fun deleteCurrentContact() {
+        binding.progressIndicator.beVisible()
+        ensureBackgroundThread {
+            try {
+                val contactUri = ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, contactId)
+                contentResolver.delete(contactUri, null, null)
+
+                ContactsCache.invalidate()
+                com.novadial.phone.helpers.RecentsHelper(this).invalidateCache()
+                EventBus.getDefault().post(Events.ContactsUpdated(contactId))
+
+                runOnUiThread {
+                    toast("Contact deleted")
+                    finish()
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    binding.progressIndicator.beGone()
+                    toast("Failed to delete contact: ${e.message}")
+                }
             }
         }
     }
@@ -408,6 +508,11 @@ class ContactDetailsActivity : SimpleActivity() {
         }
 
         updateRingtoneSubtitle()
+
+        if (autoEditPending || (isNewContact && contactId == -1L)) {
+            autoEditPending = false
+            showEditContactDialog()
+        }
     }
 
     private fun getPhoneTypeName(type: Int, label: String): String {
@@ -565,9 +670,17 @@ class ContactDetailsActivity : SimpleActivity() {
 
             dialogBinding.cancelEditButton.setOnClickListener {
                 editDialog?.dismiss()
+                if (contactId == -1L) {
+                    finish()
+                }
             }
 
             dialogBinding.saveContactButton.setOnClickListener {
+                if (isSavingContact) return@setOnClickListener
+                isSavingContact = true
+                dialogBinding.saveContactButton.isEnabled = false
+                dialogBinding.cancelEditButton.isEnabled = false
+
                 // Collect edited phone values from child views
                 for (i in 0 until dialogBinding.editPhoneNumbersContainer.childCount) {
                     val rowView = dialogBinding.editPhoneNumbersContainer.getChildAt(i)
@@ -582,7 +695,11 @@ class ContactDetailsActivity : SimpleActivity() {
                 val newMiddleName = dialogBinding.editMiddleName.text.toString().trim()
                 val newSurname = dialogBinding.editSurname.text.toString().trim()
 
-                saveContactEdits(newFirstName, newMiddleName, newSurname, editPhoneList, selectedPhotoUri)
+                if (contactId == -1L) {
+                    saveNewContact(newFirstName, newMiddleName, newSurname, editPhoneList, selectedPhotoUri)
+                } else {
+                    saveContactEdits(newFirstName, newMiddleName, newSurname, editPhoneList, selectedPhotoUri)
+                }
                 editDialog?.dismiss()
             }
 
@@ -767,8 +884,11 @@ class ContactDetailsActivity : SimpleActivity() {
 
                 ContactsCache.invalidate()
                 com.novadial.phone.helpers.RecentsHelper(this).invalidateCache()
+                EventBus.getDefault().post(Events.ContactsUpdated(contactId))
+                EventBus.getDefault().post(Events.RefreshCallLog)
 
                 runOnUiThread {
+                    isSavingContact = false
                     try {
                         Glide.with(applicationContext).clear(binding.contactImage)
                     } catch (e: Exception) {
@@ -779,8 +899,144 @@ class ContactDetailsActivity : SimpleActivity() {
                 }
             } catch (e: Exception) {
                 runOnUiThread {
+                    isSavingContact = false
                     binding.progressIndicator.beGone()
                     toast("Failed to save contact: ${e.message}")
+                }
+            }
+        }
+    }
+
+    private fun saveNewContact(
+        newGivenName: String,
+        newMiddleName: String,
+        newFamilyName: String,
+        newPhoneNumbers: List<PhoneNumberData>,
+        newPhotoUri: Uri?
+    ) {
+        binding.progressIndicator.beVisible()
+        ensureBackgroundThread {
+            try {
+                val ops = ArrayList<ContentProviderOperation>()
+                val rawContactInsertIndex = ops.size
+
+                ops.add(
+                    ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
+                        .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
+                        .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null)
+                        .build()
+                )
+
+                if (newGivenName.isNotBlank() || newMiddleName.isNotBlank() || newFamilyName.isNotBlank()) {
+                    val nameBuilder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                        .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+                        .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
+
+                    if (newGivenName.isNotBlank()) nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, newGivenName)
+                    if (newMiddleName.isNotBlank()) nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, newMiddleName)
+                    if (newFamilyName.isNotBlank()) nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, newFamilyName)
+
+                    val fullName = listOf(newGivenName, newMiddleName, newFamilyName).filter { it.isNotBlank() }.joinToString(" ")
+                    if (fullName.isNotBlank()) {
+                        nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, fullName)
+                    }
+                    ops.add(nameBuilder.build())
+                }
+
+                for (pData in newPhoneNumbers) {
+                    if (pData.number.isNotBlank()) {
+                        val phoneBuilder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, pData.number)
+                            .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, pData.type)
+
+                        if (pData.label.isNotBlank()) {
+                            phoneBuilder.withValue(ContactsContract.CommonDataKinds.Phone.LABEL, pData.label)
+                        }
+                        ops.add(phoneBuilder.build())
+                    }
+                }
+
+                if (newPhotoUri != null) {
+                    try {
+                        val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, newPhotoUri)
+                        val stream = ByteArrayOutputStream()
+                        bitmap.compress(Bitmap.CompressFormat.JPEG, 90, stream)
+                        val photoBytes = stream.toByteArray()
+                        ops.add(
+                            ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+                                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
+                                .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, photoBytes)
+                                .build()
+                        )
+                    } catch (e: Exception) {
+                        // Ignore photo load errors
+                    }
+                }
+
+                val results = contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
+                var newId: Long = -1L
+                val rawUri = results.firstOrNull()?.uri
+                if (rawUri != null) {
+                    try {
+                        val rId = ContentUris.parseId(rawUri)
+                        val rawProjection = arrayOf(ContactsContract.RawContacts.CONTACT_ID)
+                        var attempts = 0
+                        while (newId <= 0L && attempts < 10) {
+                            contentResolver.query(ContactsContract.RawContacts.CONTENT_URI, rawProjection, "${ContactsContract.RawContacts._ID} = ?", arrayOf(rId.toString()), null)?.use { cursor ->
+                                if (cursor.moveToFirst() && !cursor.isNull(0)) {
+                                    newId = cursor.getLong(0)
+                                }
+                            }
+                            if (newId <= 0L) {
+                                Thread.sleep(50)
+                                attempts++
+                            }
+                        }
+                    } catch (e: Exception) {
+                        // Ignore
+                    }
+                }
+
+                if (newId <= 0L) {
+                    val firstNumber = newPhoneNumbers.firstOrNull { it.number.isNotBlank() }?.number
+                    if (!firstNumber.isNullOrEmpty()) {
+                        try {
+                            val lookupUri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(firstNumber))
+                            contentResolver.query(lookupUri, arrayOf(ContactsContract.PhoneLookup._ID), null, null, null)?.use { cursor ->
+                                if (cursor.moveToFirst() && !cursor.isNull(0)) {
+                                    newId = cursor.getLong(0)
+                                }
+                            }
+                        } catch (e: Exception) {
+                            // Ignore
+                        }
+                    }
+                }
+
+                ContactsCache.invalidate()
+                com.novadial.phone.helpers.RecentsHelper(this).invalidateCache()
+                EventBus.getDefault().post(Events.ContactsUpdated(if (newId > 0L) newId else -1L))
+                EventBus.getDefault().post(Events.RefreshCallLog)
+
+                runOnUiThread {
+                    isSavingContact = false
+                    toast("Contact created")
+                    if (newId > 0L) {
+                        contactId = newId
+                        isNewContact = false
+                        loadContactData()
+                    } else {
+                        finish()
+                    }
+                }
+            } catch (e: Exception) {
+                runOnUiThread {
+                    isSavingContact = false
+                    binding.progressIndicator.beGone()
+                    toast("Failed to create contact: ${e.message}")
                 }
             }
         }
@@ -963,6 +1219,10 @@ class ContactDetailsActivity : SimpleActivity() {
         const val EXTRA_RAW_ID = "raw_id"
         const val EXTRA_LOOKUP_KEY = "lookup_key"
         const val EXTRA_PHONE_NUMBER = "extra_phone_number"
+        const val EXTRA_AUTO_EDIT = "extra_auto_edit"
+        const val EXTRA_IS_NEW_CONTACT = "extra_is_new_contact"
+        const val EXTRA_PREFILL_NAME = "extra_prefill_name"
+        const val EXTRA_PREFILL_PHONE = "extra_prefill_phone"
         private const val REQUEST_CODE_PICK_RINGTONE = 1001
         private const val REQUEST_CODE_PICK_PHOTO = 1002
     }

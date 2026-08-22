@@ -29,7 +29,7 @@ import com.novadial.phone.extensions.config
 import com.novadial.phone.extensions.runAfterAnimations
 import com.novadial.phone.extensions.startAddContactIntent
 import com.novadial.phone.extensions.startCallWithConfirmationCheck
-import com.novadial.phone.extensions.startContactDetailsIntent
+import com.novadial.phone.extensions.startNovaContactDetailsIntent
 import com.novadial.phone.helpers.RecentsHelper
 import com.novadial.phone.interfaces.RefreshItemsListener
 import com.novadial.phone.models.CallLogItem
@@ -97,7 +97,6 @@ class RecentsFragment(
     override fun refreshItems(invalidate: Boolean, callback: (() -> Unit)?) {
         Log.d("StartupPerf", "[RECENTS_START] Recents loading started at ${System.currentTimeMillis()}")
         if (invalidate) {
-            allRecentCalls = emptyList()
             newlyAddedCalls.clear()
         }
 
@@ -228,7 +227,7 @@ class RecentsFragment(
                         val recentCall = it as RecentCall
                         val contact = findContactByCall(recentCall)
                         if (contact != null) {
-                            activity?.startContactDetailsIntent(contact)
+                            activity?.startNovaContactDetailsIntent(contact)
                         } else {
                             activity?.startAddContactIntent(recentCall.phoneNumber)
                         }
@@ -403,6 +402,8 @@ class RecentsFragment(
     }
 
     private fun findContactByCall(recentCall: RecentCall): Contact? {
-        return (activity as MainActivity).cachedContacts.find { it.name == recentCall.name && it.doesHavePhoneNumber(recentCall.phoneNumber) }
+        val cached = com.novadial.phone.helpers.ContactsCache.getContactByNumber(recentCall.phoneNumber)
+        if (cached != null) return cached
+        return (activity as? MainActivity)?.cachedContacts?.find { it.doesHavePhoneNumber(recentCall.phoneNumber) }
     }
 }

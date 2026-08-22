@@ -21,14 +21,13 @@ import com.novadial.phone.activities.SimpleActivity
 fun SimpleActivity.handleGenericContactClick(contact: Contact) {
     when (config.onContactClick) {
         ON_CLICK_CALL_CONTACT -> startCallWithConfirmationCheck(contact)
-        ON_CLICK_VIEW_CONTACT -> startContactDetailsIntent(contact)
+        ON_CLICK_VIEW_CONTACT -> startNovaContactDetailsIntent(contact)
     }
 }
 
 fun SimpleActivity.launchCreateNewContactIntent() {
-    Intent().apply {
-        action = Intent.ACTION_INSERT
-        data = ContactsContract.Contacts.CONTENT_URI
+    Intent(this, ContactDetailsActivity::class.java).apply {
+        putExtra(ContactDetailsActivity.EXTRA_IS_NEW_CONTACT, true)
         launchActivityIntent(this)
     }
 }
