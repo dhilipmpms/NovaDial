@@ -8,10 +8,12 @@ import android.content.Intent
 import android.graphics.drawable.LayerDrawable
 import android.graphics.drawable.RippleDrawable
 import android.media.AudioManager
+import android.net.Uri
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.provider.Settings
 import android.telecom.Call
 import android.telecom.CallAudioState
 import android.view.KeyEvent
@@ -43,6 +45,7 @@ import com.novadial.phone.helpers.*
 import com.novadial.phone.models.AudioRoute
 import com.novadial.phone.models.CallContact
 import com.novadial.phone.models.CallScreenViewModel
+import com.novadial.phone.services.FloatingButtonService
 import kotlinx.coroutines.launch
 import kotlin.math.max
 import kotlin.math.min
@@ -77,7 +80,6 @@ class CallActivity : SimpleActivity() {
     private var stopAnimation = false
     private var viewsUnderDialpad = arrayListOf<Pair<View, Float>>()
     private var dialpadHeight = 0f
-
     private var audioRouteChooserDialog: DynamicBottomSheetChooserDialog? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -133,6 +135,14 @@ class CallActivity : SimpleActivity() {
             return
         }
         updateState()
+        stopFloatingButton()
+    }
+
+    override fun onPause() {
+        super.onPause()
+        if (!isCallEnded && CallManager.getPhoneState() != NoCall) {
+            startFloatingButton(callContact?.number)
+        }
     }
 
     override fun onDestroy() {
@@ -140,6 +150,7 @@ class CallActivity : SimpleActivity() {
         CallManager.removeListener(callCallback)
         callAudioManager.release()
         disableProximitySensor()
+        stopFloatingButton()
 
         if (screenOnWakeLock?.isHeld == true) {
             screenOnWakeLock!!.release()
@@ -558,6 +569,7 @@ class CallActivity : SimpleActivity() {
                 } else {
                     getString(if (isSpeakerOn) R.string.turn_speaker_off else R.string.turn_speaker_on)
                 }
+
                 // show speaker icon when a headset is connected, a headset icon maybe confusing to some
                 if (route == AudioRoute.WIRED_HEADSET) {
                     setImageResource(R.drawable.ic_volume_down_vector)
@@ -603,7 +615,6 @@ class CallActivity : SimpleActivity() {
             updatePadding(
                 bottom = binding.root.bottom - binding.callEnd.top + resources.getDimensionPixelSize(R.dimen.activity_margin)
             )
-
             translationY = dialpadHeight
             alpha = 0f
             animate()
@@ -812,6 +823,7 @@ class CallActivity : SimpleActivity() {
                 // Safety net: ensure the waiting tone is always stopped when there is
                 // no ringing call, regardless of how the second call was dismissed.
                 callAudioManager.stopCallWaitingTone()
+
                 when (phoneState) {
                     is SingleCall -> {
                         updateCallState(phoneState.call)
@@ -848,6 +860,7 @@ class CallActivity : SimpleActivity() {
                 val name = getContactNameOrNumber(fastContact)
                 binding.onHoldCallerName.text = name
             }
+
             getCallContact(applicationContext, call) { contact ->
                 if (call != CallManager.getHeldCall()) {
                     return@getCallContact
@@ -862,6 +875,7 @@ class CallActivity : SimpleActivity() {
                 }
             }
         }
+
         // Merge is only available when Telecom explicitly reports the capability on the
         // primary call — not simply because two calls exist.
         val primaryCall = CallManager.getPrimaryCall()
@@ -869,6 +883,7 @@ class CallActivity : SimpleActivity() {
             primaryCall?.hasCapability(Call.Details.CAPABILITY_MERGE_CONFERENCE) == true ||
                 primaryCall?.conferenceableCalls?.isNotEmpty() == true
         )
+
         binding.apply {
             onHoldStatusHolder.beVisibleIf(hasCallOnHold)
             onHoldMerge.beVisibleIf(canMerge)
@@ -885,6 +900,7 @@ class CallActivity : SimpleActivity() {
             val name = getContactNameOrNumber(fastContact)
             binding.callWaitingCallerName.text = name
         }
+
         getCallContact(applicationContext, ringingCall) { contact ->
             if (ringingCall.getStateCompat() != Call.STATE_RINGING) {
                 return@getCallContact
@@ -923,6 +939,7 @@ class CallActivity : SimpleActivity() {
             if (targetCall != currentPrimaryCall) {
                 return@getCallContact
             }
+
             val avatar = if (!targetCall.isConference()) contact.photoUri else null
 
             // Avoid redundant UI updates if contact information and avatar URI haven't changed
@@ -1018,6 +1035,7 @@ class CallActivity : SimpleActivity() {
         binding.incomingCallHolder.beGone()
         binding.ongoingCallHolder.beVisible()
         binding.callEnd.beVisible()
+
         // Clear call-waiting banner/tone only if no ringing call exists anymore.
         // If a second call is currently ringing while the active call is updated,
         // do NOT hide the banner or stop the waiting tone.
@@ -1026,6 +1044,7 @@ class CallActivity : SimpleActivity() {
             hideCallWaitingBanner()
             animateCallWaitingDim(dim = false)
         }
+
         callDurationHandler.removeCallbacks(updateCallDurationTask)
         callDurationHandler.post(updateCallDurationTask)
     }
@@ -1172,7 +1191,6 @@ class CallActivity : SimpleActivity() {
     }
 
     private fun getActiveButtonColor() = getNovaAccentColor()
-
     private fun getInactiveButtonColor() = getProperTextColor().adjustAlpha(0.10f)
 
     private fun toggleButtonColor(view: ImageView, enabled: Boolean) {
@@ -1191,7 +1209,30 @@ class CallActivity : SimpleActivity() {
     }
 
     private fun clearInput(): Boolean {
-        binding.dialpadInput.setText("");
-        return true;
+        binding.dialpadInput.setText("")
+        return true
+    }
+
+    // ── Floating Button ────────────────────────────────────────────────────
+
+    private fun startFloatingButton(phoneNumber: String? = null) {
+        if (Settings.canDrawOverlays(this)) {
+            val intent = Intent(this, FloatingButtonService::class.java)
+            intent.putExtra("phone_number", phoneNumber)
+            startService(intent)
+        } else {
+            try {
+                val intent = Intent(
+                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
+                    Uri.parse("package:$packageName")
+                )
+                startActivity(intent)
+            } catch (e: Exception) {
+            }
+        }
+    }
+
+    private fun stopFloatingButton() {
+        stopService(Intent(this, FloatingButtonService::class.java))
     }
 }
