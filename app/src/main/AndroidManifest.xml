@@ -181,7 +181,6 @@
             android:label="@string/call_history"
             android:parentActivityName=".activities.ContactCallHistoryActivity" />
 
-
         <activity
             android:name=".activities.ConferenceActivity"
             android:configChanges="orientation"
@@ -281,6 +280,12 @@
                 <action android:name="android.telecom.CallScreeningService" />
             </intent-filter>
         </service>
+
+        <!-- Floating Bubble Service -->
+        <service
+            android:name=".services.FloatingButtonService"
+            android:enabled="true"
+            android:exported="false" />
 
         <receiver
             android:name=".receivers.CallActionReceiver"
