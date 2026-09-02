@@ -404,6 +404,16 @@ class RecentsFragment(
     private fun findContactByCall(recentCall: RecentCall): Contact? {
         val cached = com.novadial.phone.helpers.ContactsCache.getContactByNumber(recentCall.phoneNumber)
         if (cached != null) return cached
+        val callCanonical = com.novadial.phone.extensions.getCanonicalPhoneNumber(recentCall.phoneNumber)
+        if (callCanonical.isNotEmpty()) {
+            val found = (activity as? MainActivity)?.cachedContacts?.find { contact ->
+                contact.phoneNumbers.any { p ->
+                    com.novadial.phone.extensions.getCanonicalPhoneNumber(p.value) == callCanonical ||
+                    (p.normalizedNumber.isNotBlank() && com.novadial.phone.extensions.getCanonicalPhoneNumber(p.normalizedNumber) == callCanonical)
+                }
+            }
+            if (found != null) return found
+        }
         return (activity as? MainActivity)?.cachedContacts?.find { it.doesHavePhoneNumber(recentCall.phoneNumber) }
     }
 }
