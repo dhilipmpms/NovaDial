@@ -16,6 +16,7 @@ import org.fossify.commons.extensions.isVisible
 import org.fossify.commons.extensions.underlineText
 import org.fossify.commons.helpers.ContactsHelper
 import org.fossify.commons.helpers.MyContactsContentProvider
+import org.fossify.commons.helpers.ON_CLICK_VIEW_CONTACT
 import org.fossify.commons.helpers.PERMISSION_READ_CALL_LOG
 import org.fossify.commons.helpers.SMT_PRIVATE
 import org.fossify.commons.helpers.ensureBackgroundThread
@@ -29,7 +30,7 @@ import com.novadial.phone.extensions.config
 import com.novadial.phone.extensions.runAfterAnimations
 import com.novadial.phone.extensions.startAddContactIntent
 import com.novadial.phone.extensions.startCallWithConfirmationCheck
-import com.novadial.phone.extensions.startContactDetailsIntent
+import com.novadial.phone.extensions.startNovaContactDetailsIntent
 import com.novadial.phone.helpers.RecentsHelper
 import com.novadial.phone.interfaces.RefreshItemsListener
 import com.novadial.phone.models.CallLogItem
@@ -97,7 +98,6 @@ class RecentsFragment(
     override fun refreshItems(invalidate: Boolean, callback: (() -> Unit)?) {
         Log.d("StartupPerf", "[RECENTS_START] Recents loading started at ${System.currentTimeMillis()}")
         if (invalidate) {
-            allRecentCalls = emptyList()
             newlyAddedCalls.clear()
         }
 
@@ -222,13 +222,18 @@ class RecentsFragment(
                     },
                     itemClick = {
                         val recentCall = it as RecentCall
-                        activity?.startCallWithConfirmationCheck(recentCall.phoneNumber, recentCall.name)
+                        val contact = findContactByCall(recentCall)
+                        if (contact != null && context.config.onContactClick == ON_CLICK_VIEW_CONTACT) {
+                            activity?.startNovaContactDetailsIntent(contact)
+                        } else {
+                            activity?.startCallWithConfirmationCheck(recentCall.phoneNumber, recentCall.name)
+                        }
                     },
                     profileIconClick = {
                         val recentCall = it as RecentCall
                         val contact = findContactByCall(recentCall)
                         if (contact != null) {
-                            activity?.startContactDetailsIntent(contact)
+                            activity?.startNovaContactDetailsIntent(contact)
                         } else {
                             activity?.startAddContactIntent(recentCall.phoneNumber)
                         }
@@ -403,6 +408,18 @@ class RecentsFragment(
     }
 
     private fun findContactByCall(recentCall: RecentCall): Contact? {
-        return (activity as MainActivity).cachedContacts.find { it.name == recentCall.name && it.doesHavePhoneNumber(recentCall.phoneNumber) }
+        val cached = com.novadial.phone.helpers.ContactsCache.getContactByNumber(recentCall.phoneNumber)
+        if (cached != null) return cached
+        val callCanonical = com.novadial.phone.extensions.getCanonicalPhoneNumber(recentCall.phoneNumber)
+        if (callCanonical.isNotEmpty()) {
+            val found = (activity as? MainActivity)?.cachedContacts?.find { contact ->
+                contact.phoneNumbers.any { p ->
+                    com.novadial.phone.extensions.getCanonicalPhoneNumber(p.value) == callCanonical ||
+                    (p.normalizedNumber.isNotBlank() && com.novadial.phone.extensions.getCanonicalPhoneNumber(p.normalizedNumber) == callCanonical)
+                }
+            }
+            if (found != null) return found
+        }
+        return (activity as? MainActivity)?.cachedContacts?.find { it.doesHavePhoneNumber(recentCall.phoneNumber) }
     }
 }

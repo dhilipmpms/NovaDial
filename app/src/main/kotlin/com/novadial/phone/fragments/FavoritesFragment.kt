@@ -70,22 +70,10 @@ class FavoritesFragment(context: Context, attributeSet: AttributeSet) : MyViewPa
     }
 
     override fun refreshItems(invalidate: Boolean, callback: (() -> Unit)?) {
-        ContactsHelper(context).getContacts(showOnlyContactsWithNumbers = true) { contacts ->
-            allContacts = contacts
+        com.novadial.phone.helpers.ContactsCache.getContacts(context, forceRefresh = invalidate) { contacts ->
+            val favorites = ArrayList(contacts.filter { it.starred == 1 })
 
-            if (SMT_PRIVATE !in context.baseConfig.ignoredContactSources) {
-                val privateCursor = context?.getMyContactsCursor(favoritesOnly = true, withPhoneNumbersOnly = true)
-                val privateContacts = MyContactsContentProvider.getContacts(context, privateCursor).map {
-                    it.copy(starred = 1)
-                }
-                if (privateContacts.isNotEmpty()) {
-                    allContacts.addAll(privateContacts)
-                    allContacts.sort()
-                }
-            }
-            val favorites = contacts.filter { it.starred == 1 } as ArrayList<Contact>
-
-            allContacts = if (activity!!.config.isCustomOrderSelected) {
+            allContacts = if (activity?.config?.isCustomOrderSelected == true) {
                 sortByCustomOrder(favorites)
             } else {
                 favorites
