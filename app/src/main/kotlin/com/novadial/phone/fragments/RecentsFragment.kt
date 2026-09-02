@@ -16,6 +16,7 @@ import org.fossify.commons.extensions.isVisible
 import org.fossify.commons.extensions.underlineText
 import org.fossify.commons.helpers.ContactsHelper
 import org.fossify.commons.helpers.MyContactsContentProvider
+import org.fossify.commons.helpers.ON_CLICK_VIEW_CONTACT
 import org.fossify.commons.helpers.PERMISSION_READ_CALL_LOG
 import org.fossify.commons.helpers.SMT_PRIVATE
 import org.fossify.commons.helpers.ensureBackgroundThread
@@ -221,7 +222,12 @@ class RecentsFragment(
                     },
                     itemClick = {
                         val recentCall = it as RecentCall
-                        activity?.startCallWithConfirmationCheck(recentCall.phoneNumber, recentCall.name)
+                        val contact = findContactByCall(recentCall)
+                        if (contact != null && context.config.onContactClick == ON_CLICK_VIEW_CONTACT) {
+                            activity?.startNovaContactDetailsIntent(contact)
+                        } else {
+                            activity?.startCallWithConfirmationCheck(recentCall.phoneNumber, recentCall.name)
+                        }
                     },
                     profileIconClick = {
                         val recentCall = it as RecentCall
