@@ -98,18 +98,24 @@ class CallService : InCallService() {
 
         callNotificationManager.setupNotification(lowPriority)
 
-        // Only launch the CallActivity for the very first call (no active/held call yet).
-        // When a second call arrives as call-waiting, the already-open CallActivity
-        // will receive the state change via CallManagerListener and show the
-        // in-call waiting banner — we must NOT replace the active-call UI.
         val hasExistingCall = CallManager.getActiveCall() != null || CallManager.getHeldCall() != null
-        if (
+        // Determine whether CallActivity should be launched or brought to foreground:
+        //   • First call: launch normally when FSI is unavailable (low-priority path).
+        //   • Second call (call-waiting): if the user navigated away from CallActivity,
+        //     bring the existing singleInstance back to the front so the call-waiting
+        //     banner is immediately visible. FLAG_ACTIVITY_SINGLE_TOP +
+        //     REORDER_TO_FRONT (set in getStartIntent) prevents a duplicate instance;
+        //     the running instance receives onNewIntent() → updateState().
+        val shouldLaunch = when {
             !hasExistingCall && (
                 lowPriority
-                || !hasPermission(PERMISSION_POST_NOTIFICATIONS)
-                || !canUseFullScreenIntent()
-            )
-        ) {
+                    || !hasPermission(PERMISSION_POST_NOTIFICATIONS)
+                    || !canUseFullScreenIntent()
+                ) -> true
+            hasExistingCall && !CallActivity.isInForeground -> true
+            else -> false
+        }
+        if (shouldLaunch) {
             try {
                 startActivity(CallActivity.getStartIntent(this))
             } catch (_: Exception) {

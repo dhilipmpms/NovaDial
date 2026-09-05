@@ -52,6 +52,16 @@ import kotlin.math.min
 
 class CallActivity : SimpleActivity() {
     companion object {
+        /**
+         * True while this Activity instance is between onResume() and onPause().
+         * Used by CallService to decide whether to bring CallActivity to the
+         * foreground when a second call arrives while the user is outside the dialer.
+         * @Volatile ensures cross-thread visibility (CallService runs on the
+         * Telecom binder thread).
+         */
+        @Volatile
+        var isInForeground: Boolean = false
+
         fun getStartIntent(context: Context): Intent {
             val openAppIntent = Intent(context, CallActivity::class.java)
             openAppIntent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_SINGLE_TOP or Intent.FLAG_ACTIVITY_REORDER_TO_FRONT
@@ -130,6 +140,7 @@ class CallActivity : SimpleActivity() {
 
     override fun onResume() {
         super.onResume()
+        isInForeground = true
         if (CallManager.getPhoneState() == NoCall) {
             safeFinishAndRemoveTask()
             return
@@ -139,6 +150,7 @@ class CallActivity : SimpleActivity() {
     }
 
     override fun onPause() {
+        isInForeground = false
         super.onPause()
         if (!isCallEnded && CallManager.getPhoneState() != NoCall) {
             startFloatingButton(callContact?.number)
