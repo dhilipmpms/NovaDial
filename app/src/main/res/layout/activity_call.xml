@@ -187,7 +187,7 @@
             android:background="@drawable/circle_background"
             android:contentDescription="@string/label_accept"
             android:padding="10dp"
-            android:src="@drawable/ic_call_accept"
+            android:src="@drawable/ic_phone_vector"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="parent" />
