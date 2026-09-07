@@ -22,34 +22,79 @@
             android:textSize="20sp"
             android:textStyle="bold" />
 
-        <!-- Photo Selection -->
+        <!-- Photo & Wallpaper Selection -->
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:gravity="center"
-            android:orientation="vertical">
+            android:orientation="horizontal"
+            android:gravity="center">
 
-            <ImageView
-                android:id="@+id/edit_contact_photo"
-                android:layout_width="80dp"
-                android:layout_height="80dp"
-                android:scaleType="centerCrop"
-                android:src="@drawable/ic_person_vector" />
-
-            <org.fossify.commons.views.MyTextView
-                android:id="@+id/change_photo_button"
-                android:layout_width="wrap_content"
+            <!-- Profile Photo -->
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="8dp"
-                android:background="?attr/selectableItemBackground"
-                android:clickable="true"
-                android:focusable="true"
-                android:padding="6dp"
-                android:text="Change Photo"
-                android:textColor="@color/color_accent"
-                android:textSize="14sp"
-                android:textStyle="bold" />
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/edit_contact_photo"
+                    android:layout_width="72dp"
+                    android:layout_height="72dp"
+                    android:scaleType="centerCrop"
+                    android:src="@drawable/ic_person_vector" />
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/change_photo_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="6dp"
+                    android:text="Contact Photo"
+                    android:textColor="@color/color_accent"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
+
+            <View
+                android:layout_width="1dp"
+                android:layout_height="70dp"
+                android:background="#33FFFFFF" />
+
+            <!-- Caller Screen Background Photo -->
+            <LinearLayout
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:gravity="center"
+                android:orientation="vertical">
+
+                <ImageView
+                    android:id="@+id/edit_caller_bg_photo"
+                    android:layout_width="90dp"
+                    android:layout_height="56dp"
+                    android:scaleType="centerCrop"
+                    android:background="#2C2C2E"
+                    android:src="@drawable/ic_edit" />
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/change_caller_bg_button"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginTop="6dp"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:padding="6dp"
+                    android:text="Call Wallpaper"
+                    android:textColor="@color/color_accent"
+                    android:textSize="13sp"
+                    android:textStyle="bold" />
+            </LinearLayout>
         </LinearLayout>
 
         <!-- Name Inputs -->
@@ -95,6 +140,24 @@
             android:textColorHint="#555555"
             android:textSize="15sp" />
 
+        <!-- Account Destination Selection -->
+        <org.fossify.commons.views.MyTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Save to Account"
+            android:textColor="@color/color_accent"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/edit_account_spinner"
+            android:layout_width="match_parent"
+            android:layout_height="48dp"
+            android:layout_marginTop="6dp"
+            android:background="#2C2C2E"
+            android:padding="8dp" />
+
         <!-- Phone Numbers Section -->
         <LinearLayout
             android:layout_width="match_parent"
@@ -132,6 +195,61 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:orientation="vertical" />
+
+        <!-- Additional Fields: Nickname, Email, Address, Notes -->
+        <org.fossify.commons.views.MyTextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="20dp"
+            android:text="Details"
+            android:textColor="@color/color_accent"
+            android:textSize="14sp"
+            android:textStyle="bold" />
+
+        <org.fossify.commons.views.MyEditText
+            android:id="@+id/edit_nickname"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Nickname"
+            android:inputType="textPersonName"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555555"
+            android:textSize="15sp" />
+
+        <org.fossify.commons.views.MyEditText
+            android:id="@+id/edit_email"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Email address"
+            android:inputType="textEmailAddress"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555555"
+            android:textSize="15sp" />
+
+        <org.fossify.commons.views.MyEditText
+            android:id="@+id/edit_address"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Postal address"
+            android:inputType="textPostalAddress"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555555"
+            android:textSize="15sp" />
+
+        <org.fossify.commons.views.MyEditText
+            android:id="@+id/edit_notes"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:hint="Notes"
+            android:inputType="textMultiLine"
+            android:minLines="2"
+            android:textColor="#FFFFFF"
+            android:textColorHint="#555555"
+            android:textSize="15sp" />
 
         <!-- Action Buttons -->
         <LinearLayout

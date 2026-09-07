@@ -205,9 +205,11 @@ class ContactDetailsActivity : SimpleActivity() {
         binding.editContactIcon.applyColorFilter(textColor)
         binding.customRingtoneIcon.applyColorFilter(textColor)
         binding.shareContactIcon.applyColorFilter(textColor)
-        binding.qrCodeIcon.applyColorFilter(textColor)
-
         loadContactData()
+        if (isNewContact || autoEditPending || contactId == -1L) {
+            autoEditPending = false
+            showEditContactDialog()
+        }
     }
 
     override fun onResume() {
@@ -578,6 +580,8 @@ class ContactDetailsActivity : SimpleActivity() {
 
     private var editDialog: AlertDialog? = null
     private var editPhotoImageView: ImageView? = null
+    private var editCallerBgImageView: ImageView? = null
+    private var selectedCallerBgUri: Uri? = null
 
     private fun showEditContactDialog() {
         handlePermission(PERMISSION_WRITE_CONTACTS) { hasPerm ->
@@ -588,11 +592,23 @@ class ContactDetailsActivity : SimpleActivity() {
 
             val dialogBinding = DialogEditContactBinding.inflate(layoutInflater)
             selectedPhotoUri = null
+            selectedCallerBgUri = null
+
+            dialogBinding.editContactDialogTitle.text = if (contactId == -1L || isNewContact) "Create New Contact" else "Edit Contact"
 
             // Pre-fill Name
             dialogBinding.editFirstName.setText(firstName)
             dialogBinding.editMiddleName.setText(middleName)
             dialogBinding.editSurname.setText(surname)
+
+            // Setup Account Selection Spinner
+            val availableAccounts = com.novadial.phone.helpers.AccountUtils.getAvailableAccounts(this)
+            val accountAdapter = ArrayAdapter(
+                this,
+                android.R.layout.simple_spinner_dropdown_item,
+                availableAccounts.map { it.label }
+            )
+            dialogBinding.editAccountSpinner.adapter = accountAdapter
 
             // Pre-fill Photo
             SimpleContactsHelper(this).loadContactImage(currentPhotoUriString, dialogBinding.editContactPhoto, contactName)
@@ -602,6 +618,24 @@ class ContactDetailsActivity : SimpleActivity() {
                 val pickPhotoIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
                 try {
                     startActivityForResult(pickPhotoIntent, REQUEST_CODE_PICK_PHOTO)
+                } catch (e: Exception) {
+                    toast("No photo picker available")
+                }
+            }
+
+            // Pre-fill Caller Screen Wallpaper Photo
+            editCallerBgImageView = dialogBinding.editCallerBgPhoto
+            val existingBg = if (contactId != -1L) config.getContactCustomBackground(contactId) else null
+            if (!existingBg.isNullOrEmpty()) {
+                try {
+                    Glide.with(this).load(existingBg).into(dialogBinding.editCallerBgPhoto)
+                } catch (_: Exception) {}
+            }
+
+            dialogBinding.changeCallerBgButton.setOnClickListener {
+                val pickBgIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
+                try {
+                    startActivityForResult(pickBgIntent, REQUEST_CODE_PICK_CALLER_BG)
                 } catch (e: Exception) {
                     toast("No photo picker available")
                 }
@@ -695,10 +729,29 @@ class ContactDetailsActivity : SimpleActivity() {
                 val newMiddleName = dialogBinding.editMiddleName.text.toString().trim()
                 val newSurname = dialogBinding.editSurname.text.toString().trim()
 
+                val selectedAccountIndex = dialogBinding.editAccountSpinner.selectedItemPosition
+                val selectedAccount = if (selectedAccountIndex >= 0 && selectedAccountIndex < availableAccounts.size) {
+                    availableAccounts[selectedAccountIndex]
+                } else null
+
+                val accountName = selectedAccount?.name?.ifEmpty { null }
+                val accountType = selectedAccount?.type?.ifEmpty { null }
+
+                val nickname = dialogBinding.editNickname.text.toString().trim()
+                val email = dialogBinding.editEmail.text.toString().trim()
+                val address = dialogBinding.editAddress.text.toString().trim()
+                val notes = dialogBinding.editNotes.text.toString().trim()
+
                 if (contactId == -1L) {
-                    saveNewContact(newFirstName, newMiddleName, newSurname, editPhoneList, selectedPhotoUri)
+                    saveNewContact(
+                        newFirstName, newMiddleName, newSurname, editPhoneList, selectedPhotoUri,
+                        accountName, accountType, nickname, email, address, notes
+                    )
                 } else {
-                    saveContactEdits(newFirstName, newMiddleName, newSurname, editPhoneList, selectedPhotoUri)
+                    saveContactEdits(
+                        newFirstName, newMiddleName, newSurname, editPhoneList, selectedPhotoUri,
+                        accountName, accountType, nickname, email, address, notes
+                    )
                 }
                 editDialog?.dismiss()
             }
@@ -716,7 +769,13 @@ class ContactDetailsActivity : SimpleActivity() {
         newMiddleName: String,
         newFamilyName: String,
         newPhoneNumbers: List<PhoneNumberData>,
-        newPhotoUri: Uri?
+        newPhotoUri: Uri?,
+        accountName: String? = null,
+        accountType: String? = null,
+        nickname: String? = null,
+        email: String? = null,
+        address: String? = null,
+        notes: String? = null
     ) {
         binding.progressIndicator.beVisible()
         ensureBackgroundThread {
@@ -743,6 +802,25 @@ class ContactDetailsActivity : SimpleActivity() {
                     rawContactIds.add(targetRawId)
                 }
                 val primaryRawId = rawContactIds.firstOrNull() ?: targetRawId
+
+                // 0. Update Account parameters if provided
+                if (!accountName.isNullOrEmpty() || !accountType.isNullOrEmpty()) {
+                    for (rId in rawContactIds) {
+                        val accountUpdateBuilder = ContentProviderOperation.newUpdate(ContactsContract.RawContacts.CONTENT_URI)
+                            .withSelection("${ContactsContract.RawContacts._ID}=?", arrayOf(rId.toString()))
+                        if (!accountName.isNullOrBlank()) {
+                            accountUpdateBuilder.withValue(ContactsContract.RawContacts.ACCOUNT_NAME, accountName)
+                        } else {
+                            accountUpdateBuilder.withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null as String?)
+                        }
+                        if (!accountType.isNullOrBlank()) {
+                            accountUpdateBuilder.withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, accountType)
+                        } else {
+                            accountUpdateBuilder.withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null as String?)
+                        }
+                        ops.add(accountUpdateBuilder.build())
+                    }
+                }
 
                 // 1. Update/Insert StructuredName for all constituent RawContacts
                 var hasAnyNameRow = false
@@ -774,6 +852,72 @@ class ContactDetailsActivity : SimpleActivity() {
                         .withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, newFamilyName)
                         .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, "$newGivenName $newMiddleName $newFamilyName".trim())
                     ops.add(builder.build())
+                }
+
+                // Update Nickname if provided
+                if (!nickname.isNullOrBlank() && primaryRawId != -1L) {
+                    ops.add(
+                        ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
+                            .withSelection("${ContactsContract.Data.RAW_CONTACT_ID}=? AND ${ContactsContract.Data.MIMETYPE}=?", arrayOf(primaryRawId.toString(), ContactsContract.CommonDataKinds.Nickname.CONTENT_ITEM_TYPE))
+                            .build()
+                    )
+                    ops.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValue(ContactsContract.Data.RAW_CONTACT_ID, primaryRawId)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Nickname.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Nickname.NAME, nickname)
+                            .build()
+                    )
+                }
+
+                // Update Email if provided
+                if (!email.isNullOrBlank() && primaryRawId != -1L) {
+                    ops.add(
+                        ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
+                            .withSelection("${ContactsContract.Data.RAW_CONTACT_ID}=? AND ${ContactsContract.Data.MIMETYPE}=?", arrayOf(primaryRawId.toString(), ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE))
+                            .build()
+                    )
+                    ops.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValue(ContactsContract.Data.RAW_CONTACT_ID, primaryRawId)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Email.ADDRESS, email)
+                            .withValue(ContactsContract.CommonDataKinds.Email.TYPE, ContactsContract.CommonDataKinds.Email.TYPE_HOME)
+                            .build()
+                    )
+                }
+
+                // Update Address if provided
+                if (!address.isNullOrBlank() && primaryRawId != -1L) {
+                    ops.add(
+                        ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
+                            .withSelection("${ContactsContract.Data.RAW_CONTACT_ID}=? AND ${ContactsContract.Data.MIMETYPE}=?", arrayOf(primaryRawId.toString(), ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE))
+                            .build()
+                    )
+                    ops.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValue(ContactsContract.Data.RAW_CONTACT_ID, primaryRawId)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS, address)
+                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.TYPE, ContactsContract.CommonDataKinds.StructuredPostal.TYPE_HOME)
+                            .build()
+                    )
+                }
+
+                // Update Notes if provided
+                if (!notes.isNullOrBlank() && primaryRawId != -1L) {
+                    ops.add(
+                        ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI)
+                            .withSelection("${ContactsContract.Data.RAW_CONTACT_ID}=? AND ${ContactsContract.Data.MIMETYPE}=?", arrayOf(primaryRawId.toString(), ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE))
+                            .build()
+                    )
+                    ops.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValue(ContactsContract.Data.RAW_CONTACT_ID, primaryRawId)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Note.NOTE, notes)
+                            .build()
+                    )
                 }
 
                 // 2. Manage Phone Numbers (Update existing, Insert new, Delete removed)
@@ -882,6 +1026,10 @@ class ContactDetailsActivity : SimpleActivity() {
                     contentResolver.applyBatch(ContactsContract.AUTHORITY, ops)
                 }
 
+                if (selectedCallerBgUri != null && contactId != -1L) {
+                    config.setContactCustomBackground(contactId, selectedCallerBgUri.toString())
+                }
+
                 ContactsCache.invalidate()
                 com.novadial.phone.helpers.RecentsHelper(this).invalidateCache()
                 EventBus.getDefault().post(Events.ContactsUpdated(contactId))
@@ -912,7 +1060,13 @@ class ContactDetailsActivity : SimpleActivity() {
         newMiddleName: String,
         newFamilyName: String,
         newPhoneNumbers: List<PhoneNumberData>,
-        newPhotoUri: Uri?
+        newPhotoUri: Uri?,
+        accountName: String? = null,
+        accountType: String? = null,
+        nickname: String? = null,
+        email: String? = null,
+        address: String? = null,
+        notes: String? = null
     ) {
         binding.progressIndicator.beVisible()
         ensureBackgroundThread {
@@ -920,27 +1074,71 @@ class ContactDetailsActivity : SimpleActivity() {
                 val ops = ArrayList<ContentProviderOperation>()
                 val rawContactInsertIndex = ops.size
 
-                ops.add(
-                    ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
-                        .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
-                        .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null)
-                        .build()
-                )
+                val rawContactBuilder = ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
+                if (!accountType.isNullOrBlank()) {
+                    rawContactBuilder.withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, accountType)
+                } else {
+                    rawContactBuilder.withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null as String?)
+                }
+                if (!accountName.isNullOrBlank()) {
+                    rawContactBuilder.withValue(ContactsContract.RawContacts.ACCOUNT_NAME, accountName)
+                } else {
+                    rawContactBuilder.withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null as String?)
+                }
+                ops.add(rawContactBuilder.build())
 
-                if (newGivenName.isNotBlank() || newMiddleName.isNotBlank() || newFamilyName.isNotBlank()) {
-                    val nameBuilder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
-                        .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
-                        .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
+                val nameBuilder = ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                    .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+                    .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
 
-                    if (newGivenName.isNotBlank()) nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, newGivenName)
-                    if (newMiddleName.isNotBlank()) nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, newMiddleName)
-                    if (newFamilyName.isNotBlank()) nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, newFamilyName)
+                if (newGivenName.isNotBlank()) nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, newGivenName)
+                if (newMiddleName.isNotBlank()) nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, newMiddleName)
+                if (newFamilyName.isNotBlank()) nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, newFamilyName)
 
-                    val fullName = listOf(newGivenName, newMiddleName, newFamilyName).filter { it.isNotBlank() }.joinToString(" ")
-                    if (fullName.isNotBlank()) {
-                        nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, fullName)
-                    }
-                    ops.add(nameBuilder.build())
+                val fullName = listOf(newGivenName, newMiddleName, newFamilyName).filter { it.isNotBlank() }.joinToString(" ")
+                nameBuilder.withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, fullName)
+                ops.add(nameBuilder.build())
+
+                if (!nickname.isNullOrBlank()) {
+                    ops.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Nickname.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Nickname.NAME, nickname)
+                            .build()
+                    )
+                }
+
+                if (!email.isNullOrBlank()) {
+                    ops.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Email.ADDRESS, email)
+                            .withValue(ContactsContract.CommonDataKinds.Email.TYPE, ContactsContract.CommonDataKinds.Email.TYPE_HOME)
+                            .build()
+                    )
+                }
+
+                if (!address.isNullOrBlank()) {
+                    ops.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredPostal.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.FORMATTED_ADDRESS, address)
+                            .withValue(ContactsContract.CommonDataKinds.StructuredPostal.TYPE, ContactsContract.CommonDataKinds.StructuredPostal.TYPE_HOME)
+                            .build()
+                    )
+                }
+
+                if (!notes.isNullOrBlank()) {
+                    ops.add(
+                        ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                            .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, rawContactInsertIndex)
+                            .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Note.CONTENT_ITEM_TYPE)
+                            .withValue(ContactsContract.CommonDataKinds.Note.NOTE, notes)
+                            .build()
+                    )
                 }
 
                 for (pData in newPhoneNumbers) {
@@ -1014,6 +1212,10 @@ class ContactDetailsActivity : SimpleActivity() {
                             // Ignore
                         }
                     }
+                }
+
+                if (selectedCallerBgUri != null && newId > 0L) {
+                    config.setContactCustomBackground(newId, selectedCallerBgUri.toString())
                 }
 
                 ContactsCache.invalidate()
@@ -1210,6 +1412,13 @@ class ContactDetailsActivity : SimpleActivity() {
                         editPhotoImageView?.setImageURI(imageUri)
                     }
                 }
+                REQUEST_CODE_PICK_CALLER_BG -> {
+                    val bgUri = data?.data
+                    if (bgUri != null) {
+                        selectedCallerBgUri = bgUri
+                        editCallerBgImageView?.setImageURI(bgUri)
+                    }
+                }
             }
         }
     }
@@ -1225,5 +1434,6 @@ class ContactDetailsActivity : SimpleActivity() {
         const val EXTRA_PREFILL_PHONE = "extra_prefill_phone"
         private const val REQUEST_CODE_PICK_RINGTONE = 1001
         private const val REQUEST_CODE_PICK_PHOTO = 1002
+        private const val REQUEST_CODE_PICK_CALLER_BG = 1003
     }
 }

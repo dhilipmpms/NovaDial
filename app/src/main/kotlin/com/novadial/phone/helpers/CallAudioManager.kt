@@ -111,23 +111,68 @@ class CallAudioManager(private val context: Context) {
     }
 
     /**
+     * Single sharp haptic pulse when an outgoing or incoming call connects (STATE_ACTIVE).
+     */
+    fun playConnectHaptic() {
+        vibratePulse(200L)
+    }
+
+    /**
+     * Double short pulse when a call disconnects (STATE_DISCONNECTED or endCall).
+     */
+    fun playDisconnectHaptic() {
+        vibratePattern(longArrayOf(0, 150, 100, 200))
+    }
+
+    /**
      * Triple-pulse haptic for Merge operation.
      * Silent mode: no feedback. Vibrate / Normal: feedback plays.
      */
     fun playMergeHaptic() {
-        if (audioManager.ringerMode == AudioManager.RINGER_MODE_SILENT) return
-        // Pattern: [wait, vibrate, pause, vibrate, pause, vibrate] in ms
         vibratePattern(longArrayOf(0, 80, 30, 80, 30, 80))
+    }
+
+    private fun vibratePulse(durationMs: Long) {
+        val vibrator = getVibrator() ?: return
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val effect = VibrationEffect.createOneShot(durationMs, VibrationEffect.DEFAULT_AMPLITUDE)
+                val audioAttributes = android.media.AudioAttributes.Builder()
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(android.media.AudioAttributes.USAGE_VOICE_COMMUNICATION_SIGNALLING)
+                    .build()
+                vibrator.vibrate(effect, audioAttributes)
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(durationMs)
+            }
+        } catch (e: Exception) {
+            try {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(durationMs)
+            } catch (_: Exception) {}
+        }
     }
 
     private fun vibratePattern(pattern: LongArray) {
         val vibrator = getVibrator() ?: return
-        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
-            val effect = VibrationEffect.createWaveform(pattern, -1 /* no repeat */)
-            vibrator.vibrate(effect)
-        } else {
-            @Suppress("DEPRECATION")
-            vibrator.vibrate(pattern, -1)
+        try {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+                val effect = VibrationEffect.createWaveform(pattern, -1 /* no repeat */)
+                val audioAttributes = android.media.AudioAttributes.Builder()
+                    .setContentType(android.media.AudioAttributes.CONTENT_TYPE_SONIFICATION)
+                    .setUsage(android.media.AudioAttributes.USAGE_VOICE_COMMUNICATION_SIGNALLING)
+                    .build()
+                vibrator.vibrate(effect, audioAttributes)
+            } else {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(pattern, -1)
+            }
+        } catch (e: Exception) {
+            try {
+                @Suppress("DEPRECATION")
+                vibrator.vibrate(pattern, -1)
+            } catch (_: Exception) {}
         }
     }
 

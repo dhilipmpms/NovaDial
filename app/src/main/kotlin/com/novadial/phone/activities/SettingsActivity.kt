@@ -115,6 +115,10 @@ class SettingsActivity : SimpleActivity() {
         setupStartNameWithSurname()
         setupCustomContactNameFormat()
         setupFormatPhoneNumbers()
+        setupVibrateOnConnect()
+        setupVibrateOnDisconnect()
+        setupAvatarShape()
+        setupColorfulAvatars()
         setupDialpadVibrations()
         setupDialpadNumbers()
         setupDialpadBeeps()
@@ -133,6 +137,7 @@ class SettingsActivity : SimpleActivity() {
                 settingsGeneralSettingsLabel,
                 settingsStartupLabel,
                 settingsCallsLabel,
+                settingsAvatarSectionLabel,
                 settingsDialpadSectionLabel,
                 settingsMigrationSectionLabel
             ).forEach {
@@ -499,6 +504,54 @@ class SettingsActivity : SimpleActivity() {
                 if (!isChecked) {
                     RingtoneVolumeHelper.restoreVolume(this@SettingsActivity)
                 }
+            }
+        }
+    }
+
+    private fun setupVibrateOnConnect() {
+        binding.apply {
+            settingsVibrateOnConnect.isChecked = config.vibrateOnConnect
+            settingsVibrateOnConnectHolder.setOnClickListener {
+                settingsVibrateOnConnect.toggle()
+                config.vibrateOnConnect = settingsVibrateOnConnect.isChecked
+            }
+        }
+    }
+
+    private fun setupVibrateOnDisconnect() {
+        binding.apply {
+            settingsVibrateOnDisconnect.isChecked = config.vibrateOnDisconnect
+            settingsVibrateOnDisconnectHolder.setOnClickListener {
+                settingsVibrateOnDisconnect.toggle()
+                config.vibrateOnDisconnect = settingsVibrateOnDisconnect.isChecked
+            }
+        }
+    }
+
+    private fun setupAvatarShape() {
+        binding.apply {
+            settingsAvatarShape.text = com.novadial.phone.helpers.AvatarShapeHelper.getShapeName(config.avatarShape)
+            settingsAvatarShapeHolder.setOnClickListener {
+                val items = arrayListOf(
+                    RadioItem(0, "Squircle"),
+                    RadioItem(1, "Circle"),
+                    RadioItem(2, "Square"),
+                    RadioItem(3, "Soft Cookie")
+                )
+                RadioGroupDialog(this@SettingsActivity, items, config.avatarShape) {
+                    config.avatarShape = it as Int
+                    settingsAvatarShape.text = com.novadial.phone.helpers.AvatarShapeHelper.getShapeName(config.avatarShape)
+                }
+            }
+        }
+    }
+
+    private fun setupColorfulAvatars() {
+        binding.apply {
+            settingsColorfulAvatars.isChecked = config.colorfulAvatars
+            settingsColorfulAvatarsHolder.setOnClickListener {
+                settingsColorfulAvatars.toggle()
+                config.colorfulAvatars = settingsColorfulAvatars.isChecked
             }
         }
     }
