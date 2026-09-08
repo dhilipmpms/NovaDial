@@ -137,6 +137,10 @@ class MainActivity : SimpleActivity() {
         val dialpadIcon = resources.getColoredDrawableWithColor(R.drawable.ic_dialpad_vector, properPrimaryColor.getContrastColor())
         binding.mainDialpadButton.setImageDrawable(dialpadIcon)
 
+        val addContactIcon = resources.getColoredDrawableWithColor(R.drawable.ic_person_add_vector, properPrimaryColor.getContrastColor())
+        binding.mainAddContactButton.setImageDrawable(addContactIcon)
+
+
         updateTextColors(binding.mainHolder)
         binding.mainHolder.setBackgroundColor(getNovaBackgroundColor())
         setupTabColors()
@@ -219,7 +223,12 @@ class MainActivity : SimpleActivity() {
             findItem(R.id.change_view_type).isVisible = currentFragment == getFavoritesFragment()
             findItem(R.id.column_count).isVisible = currentFragment == getFavoritesFragment() && config.viewType == VIEW_TYPE_GRID
         }
+
+        val isContactsTab = currentFragment == getContactsFragment()
+        binding.mainAddContactButton.beVisibleIf(isContactsTab)
+        binding.mainDialpadButton.beGoneIf(isContactsTab)
     }
+
 
     private fun setupOptionsMenu() {
         binding.mainMenu.apply {
@@ -416,6 +425,11 @@ class MainActivity : SimpleActivity() {
         binding.mainDialpadButton.setOnClickListener {
             launchDialpad()
         }
+
+        binding.mainAddContactButton.setOnClickListener {
+            launchCreateNewContactIntent()
+        }
+
 
         binding.viewPager.onGlobalLayout {
             refreshMenuItems()
