@@ -37,6 +37,7 @@ import com.novadial.phone.extensions.getNameToDisplay
 import com.novadial.phone.extensions.startContactDetailsIntent
 import com.novadial.phone.extensions.startNovaContactDetailsIntent
 import com.novadial.phone.interfaces.RefreshItemsListener
+import com.novadial.phone.helpers.AvatarShapeHelper
 import java.util.Collections
 
 class ContactsAdapter(
@@ -423,6 +424,7 @@ class ContactsAdapter(
             }
 
             if (!activity.isDestroyed) {
+                AvatarShapeHelper.applyAvatarShape(itemContactImage, activity.config.avatarShape)
                 SimpleContactsHelper(root.context).loadContactImage(contact.photoUri, itemContactImage, contact.getNameToDisplay(activity))
             }
         }

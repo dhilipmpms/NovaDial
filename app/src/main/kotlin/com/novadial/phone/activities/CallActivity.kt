@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.provider.ContactsContract
 import android.provider.Settings
 import android.telecom.Call
 import android.telecom.CallAudioState
@@ -683,6 +684,23 @@ class CallActivity : SimpleActivity() {
                 callerNumber.beGone()
             }
 
+            val customBgUri = if (number.isNotEmpty()) {
+                val contactId = getContactIdForNumber(number)
+                if (contactId != -1L) config.getContactCustomBackground(contactId) else null
+            } else null
+
+            if (!customBgUri.isNullOrEmpty() && !isFinishing && !isDestroyed) {
+                callerBackgroundImage.beVisible()
+                callerBackgroundOverlay.beVisible()
+                Glide.with(this@CallActivity)
+                    .load(customBgUri)
+                    .centerCrop()
+                    .into(callerBackgroundImage)
+            } else {
+                callerBackgroundImage.beGone()
+                callerBackgroundOverlay.beGone()
+            }
+
             callerAvatar.apply {
                 if (avatarUri.isNullOrEmpty()) {
                     val bgColor = getProperPrimaryColor()
@@ -703,6 +721,18 @@ class CallActivity : SimpleActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun getContactIdForNumber(number: String): Long {
+        if (number.isEmpty()) return -1L
+        return try {
+            val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number))
+            contentResolver.query(uri, arrayOf(ContactsContract.PhoneLookup._ID), null, null, null)?.use { cursor ->
+                if (cursor.moveToFirst()) cursor.getLong(0) else -1L
+            } ?: -1L
+        } catch (e: Exception) {
+            -1L
         }
     }
 
@@ -747,8 +777,19 @@ class CallActivity : SimpleActivity() {
         }
     }
 
+    private var previousCallState: Int = -1
+
     private fun updateCallState(call: Call) {
         val state = call.getStateCompat()
+        if (state != previousCallState) {
+            if (state == Call.STATE_ACTIVE && previousCallState != Call.STATE_ACTIVE && config.vibrateOnConnect) {
+                callAudioManager.playConnectHaptic()
+            } else if (state == Call.STATE_DISCONNECTED && config.vibrateOnDisconnect) {
+                callAudioManager.playDisconnectHaptic()
+            }
+            previousCallState = state
+        }
+
         when (state) {
             Call.STATE_RINGING -> callRinging()
             Call.STATE_ACTIVE -> callStarted()
@@ -1070,6 +1111,9 @@ class CallActivity : SimpleActivity() {
     }
 
     private fun endCall() {
+        if (config.vibrateOnDisconnect) {
+            callAudioManager.playDisconnectHaptic()
+        }
         if (CallManager.getPhoneState() != NoCall) {
             CallManager.reject()
         }

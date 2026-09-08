@@ -179,4 +179,40 @@ class Config(context: Context) : BaseConfig(context) {
     var customContactNameFormat: Int
         get() = prefs.getInt(com.novadial.phone.extensions.CUSTOM_CONTACT_NAME_FORMAT, com.novadial.phone.extensions.FORMAT_FIRST_SURNAME)
         set(customContactNameFormat) = prefs.edit().putInt(com.novadial.phone.extensions.CUSTOM_CONTACT_NAME_FORMAT, customContactNameFormat).apply()
+
+    var vibrateOnConnect: Boolean
+        get() = prefs.getBoolean("vibrate_on_connect", true)
+        set(value) = prefs.edit().putBoolean("vibrate_on_connect", value).apply()
+
+    var vibrateOnDisconnect: Boolean
+        get() = prefs.getBoolean("vibrate_on_disconnect", true)
+        set(value) = prefs.edit().putBoolean("vibrate_on_disconnect", value).apply()
+
+    var avatarShape: Int
+        get() = prefs.getInt("avatar_shape", 0)
+        set(value) = prefs.edit().putInt("avatar_shape", value).apply()
+
+    var colorfulAvatars: Boolean
+        get() = prefs.getBoolean("colorful_avatars", true)
+        set(value) = prefs.edit().putBoolean("colorful_avatars", value).apply()
+
+    var gradientAvatars: Boolean
+        get() = prefs.getBoolean("gradient_avatars", false)
+        set(value) = prefs.edit().putBoolean("gradient_avatars", value).apply()
+
+    var showPictures: Boolean
+        get() = prefs.getBoolean("show_pictures", true)
+        set(value) = prefs.edit().putBoolean("show_pictures", value).apply()
+
+    fun getContactCustomBackground(contactId: Long): String? {
+        return prefs.getString("contact_custom_bg_$contactId", null)
+    }
+
+    fun setContactCustomBackground(contactId: Long, uriString: String?) {
+        if (uriString.isNullOrEmpty()) {
+            prefs.edit().remove("contact_custom_bg_$contactId").apply()
+        } else {
+            prefs.edit().putString("contact_custom_bg_$contactId", uriString).apply()
+        }
+    }
 }
