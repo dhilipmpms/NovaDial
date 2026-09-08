@@ -12,6 +12,24 @@ const val FORMAT_SURNAME_FIRST = 3
 const val FORMAT_SURNAME_FIRST_MIDDLE = 4
 const val FORMAT_FIRST_MIDDLE_SURNAME = 5
 
+fun containsWord(text: String, word: String): Boolean {
+    val trimmedWord = word.trim()
+    val trimmedText = text.trim()
+    if (trimmedWord.isEmpty() || trimmedText.isEmpty()) return false
+    val pattern = Regex("""\b""" + Regex.escape(trimmedWord) + """\b""", RegexOption.IGNORE_CASE)
+    return pattern.containsMatchIn(trimmedText)
+}
+
+fun cleanNameString(name: String): String {
+    var result = name.trim()
+    var prev = ""
+    while (result != prev) {
+        prev = result
+        result = result.replace(Regex("""\b(\w+)\s+\1\b""", RegexOption.IGNORE_CASE), "$1").trim()
+    }
+    return result
+}
+
 fun formatContactName(
     firstName: String,
     middleName: String,
@@ -22,55 +40,68 @@ fun formatContactName(
     val fn = firstName.trim()
     val mn = middleName.trim()
     val sn = surname.trim()
+    val base = listOf(fn, mn).filter { it.isNotEmpty() }.joinToString(" ")
 
     val formatted = when (format) {
         FORMAT_FIRST_SURNAME -> {
             when {
-                fn.isNotEmpty() && sn.isNotEmpty() -> "$fn $sn"
-                fn.isNotEmpty() -> fn
+                base.isNotEmpty() && sn.isNotEmpty() -> {
+                    if (containsWord(base, sn)) base else "$base $sn"
+                }
+                base.isNotEmpty() -> base
                 sn.isNotEmpty() -> sn
                 else -> ""
             }
         }
         FORMAT_SURNAME_COMMA_FIRST -> {
             when {
-                sn.isNotEmpty() && fn.isNotEmpty() -> "$sn, $fn"
+                sn.isNotEmpty() && base.isNotEmpty() -> {
+                    if (containsWord(base, sn)) base else "$sn, $base"
+                }
                 sn.isNotEmpty() -> sn
-                fn.isNotEmpty() -> fn
+                base.isNotEmpty() -> base
                 else -> ""
             }
         }
         FORMAT_SURNAME_FIRST -> {
             when {
-                sn.isNotEmpty() && fn.isNotEmpty() -> "$sn $fn"
+                sn.isNotEmpty() && base.isNotEmpty() -> {
+                    if (containsWord(base, sn)) base else "$sn $base"
+                }
                 sn.isNotEmpty() -> sn
-                fn.isNotEmpty() -> fn
+                base.isNotEmpty() -> base
                 else -> ""
             }
         }
         FORMAT_SURNAME_FIRST_MIDDLE -> {
-            listOf(sn, fn, mn).filter { it.isNotEmpty() }.joinToString(" ")
+            if (sn.isNotEmpty()) {
+                if (containsWord(base, sn)) base else "$sn $base"
+            } else {
+                base
+            }
         }
         FORMAT_FIRST_MIDDLE_SURNAME -> {
-            listOf(fn, mn, sn).filter { it.isNotEmpty() }.joinToString(" ")
+            if (sn.isNotEmpty()) {
+                if (containsWord(base, sn)) base else "$base $sn"
+            } else {
+                base
+            }
         }
         else -> ""
     }
 
-    return formatted.ifEmpty { fallbackName }
+    val result = formatted.ifEmpty { fallbackName }
+    return cleanNameString(result)
 }
 
 fun Contact.getNameToDisplay(context: Context): String {
-    val config = context.config
-    if (!config.useCustomContactNameFormat) {
-        return this.getNameToDisplay()
-    }
-    return formatContactName(
+    val rawFallback = this.getNameToDisplay()
+    return getFormattedContactName(
         firstName = this.firstName,
         middleName = this.middleName,
         surname = this.surname,
-        fallbackName = this.getNameToDisplay(),
-        format = config.customContactNameFormat
+        fallbackName = rawFallback,
+        context = context
     )
 }
 
@@ -83,11 +114,29 @@ fun getFormattedContactName(
 ): String {
     val config = context.config
     if (!config.useCustomContactNameFormat) {
-        return if (config.startNameWithSurname) {
-            listOf(surname, firstName, middleName).filter { it.isNotBlank() }.joinToString(" ").ifEmpty { fallbackName }
+        val fn = firstName.trim()
+        val mn = middleName.trim()
+        val sn = surname.trim()
+        val base = listOf(fn, mn).filter { it.isNotBlank() }.joinToString(" ")
+
+        val constructed = if (base.isNotBlank()) {
+            if (sn.isNotBlank()) {
+                if (containsWord(base, sn)) {
+                    base
+                } else if (config.startNameWithSurname) {
+                    "$sn $base"
+                } else {
+                    "$base $sn"
+                }
+            } else {
+                base
+            }
         } else {
-            listOf(firstName, middleName, surname).filter { it.isNotBlank() }.joinToString(" ").ifEmpty { fallbackName }
+            sn
         }
+
+        val result = constructed.ifEmpty { fallbackName }
+        return cleanNameString(result)
     }
     return formatContactName(
         firstName = firstName,

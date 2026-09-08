@@ -47,5 +47,16 @@
     <!-- Call-waiting banner stroke / card -->
     <color name="call_waiting_card_stroke">#33FFFFFF</color>
     <color name="call_waiting_label_color">#FFFFA726</color> <!-- Orange 400 — "Incoming" label -->
+
+    <!-- Material 3 Purple Expressive Tokens -->
+    <color name="m3_purple_primary">#6750A4</color>
+    <color name="m3_purple_on_primary">#FFFFFF</color>
+    <color name="m3_purple_primary_container">#EADDFF</color>
+    <color name="m3_purple_on_primary_container">#21005D</color>
+    <color name="m3_purple_secondary_container">#E8DEF8</color>
+    <color name="m3_purple_on_secondary_container">#1D192B</color>
+    <color name="m3_purple_surface_container">#F3EDF7</color>
+    <color name="m3_purple_surface_container_high">#ECE6F0</color>
 </resources>
+
 
