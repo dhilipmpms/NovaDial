@@ -172,4 +172,10 @@
     <string name="format_surname_first">Surname First name</string>
     <string name="format_surname_first_middle">Surname First name Middle name</string>
     <string name="format_first_middle_surname">First name Middle name Surname</string>
+
+    <!-- Contact Photo -->
+    <string name="change_photo">Change photo</string>
+    <string name="take_photo">Take photo</string>
+    <string name="choose_photo">Choose photo</string>
+    <string name="remove_photo">Remove photo</string>
 </resources>
