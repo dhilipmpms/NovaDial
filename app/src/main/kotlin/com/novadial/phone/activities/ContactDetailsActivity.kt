@@ -1,6 +1,8 @@
 package com.novadial.phone.activities
 
 import android.app.Activity
+import android.content.ActivityNotFoundException
+import android.content.ClipData
 import android.content.ContentProviderOperation
 import android.content.ContentUris
 import android.content.ContentValues
@@ -30,6 +32,7 @@ import androidx.core.content.FileProvider
 import com.bumptech.glide.Glide
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
+import java.io.File
 import org.fossify.commons.dialogs.ConfirmationDialog
 import org.fossify.commons.extensions.adjustAlpha
 import org.fossify.commons.extensions.applyColorFilter
@@ -40,6 +43,7 @@ import org.fossify.commons.extensions.getAlertDialogBuilder
 import org.fossify.commons.extensions.getContrastColor
 import org.fossify.commons.extensions.getProperTextColor
 import org.fossify.commons.extensions.hasPermission
+import org.fossify.commons.extensions.hideKeyboard
 import org.fossify.commons.extensions.launchSendSMSIntent
 import org.fossify.commons.extensions.setupDialogStuff
 import org.fossify.commons.extensions.toast
@@ -61,7 +65,6 @@ import com.novadial.phone.helpers.ContactsCache
 import com.novadial.phone.models.Events
 import org.greenrobot.eventbus.EventBus
 import java.io.ByteArrayOutputStream
-import java.io.File
 
 class ContactDetailsActivity : SimpleActivity() {
     private val binding by viewBinding(ActivityContactDetailsBinding::inflate)
@@ -582,6 +585,140 @@ class ContactDetailsActivity : SimpleActivity() {
     private var editPhotoImageView: ImageView? = null
     private var editCallerBgImageView: ImageView? = null
     private var selectedCallerBgUri: Uri? = null
+    private var lastPhotoIntentUri: Uri? = null
+    private var isPhotoRemoved = false
+
+    private fun trySetPhoto() {
+        val items = ArrayList<String>()
+        items.add(getString(R.string.take_photo))
+        items.add(getString(R.string.choose_photo))
+        val hasPhoto = currentPhotoUriString.isNotEmpty() || selectedPhotoUri != null
+        if (hasPhoto && !isPhotoRemoved) {
+            items.add(getString(R.string.remove_photo))
+        }
+
+        getAlertDialogBuilder()
+            .setTitle(R.string.change_photo)
+            .setItems(items.toTypedArray()) { _, which ->
+                when (items[which]) {
+                    getString(R.string.take_photo) -> startTakePhotoIntent()
+                    getString(R.string.choose_photo) -> startChoosePhotoIntent()
+                    getString(R.string.remove_photo) -> removeContactPhoto()
+                }
+            }
+            .show()
+    }
+
+    private fun startTakePhotoIntent() {
+        val photoFile = getCachePhoto()
+        lastPhotoIntentUri = getCachePhotoUri(photoFile)
+        val intent = Intent(MediaStore.ACTION_IMAGE_CAPTURE).apply {
+            putExtra(MediaStore.EXTRA_OUTPUT, lastPhotoIntentUri)
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        }
+        try {
+            startActivityForResult(intent, REQUEST_CODE_TAKE_PHOTO)
+        } catch (e: Exception) {
+            toast("No camera app available")
+        }
+    }
+
+    private fun startChoosePhotoIntent() {
+        hideKeyboard()
+
+        val pickPhotoIntent = Intent(
+            Intent.ACTION_PICK,
+            MediaStore.Images.Media.EXTERNAL_CONTENT_URI
+        ).apply {
+            type = "image/*"
+        }
+
+        try {
+            startActivityForResult(
+                pickPhotoIntent,
+                REQUEST_CODE_PICK_PHOTO
+            )
+        } catch (e: ActivityNotFoundException) {
+            toast("No photo picker available")
+        } catch (e: Exception) {
+            toast("No photo picker available")
+        }
+    }
+
+    private fun removeContactPhoto() {
+        isPhotoRemoved = true
+        selectedPhotoUri = null
+        editPhotoImageView?.let {
+            SimpleContactsHelper(this).loadContactImage("", it, "")
+        }
+    }
+
+    private fun startCropPhotoIntent(primaryUri: Uri?, backupUri: Uri?) {
+        if (primaryUri == null) {
+            toast(R.string.could_not_access_contacts)
+            return
+        }
+
+        var imageUri = primaryUri
+        var bitmap: Bitmap? = null
+        try {
+            bitmap = MediaStore.Images.Media.getBitmap(contentResolver, primaryUri)
+        } catch (_: Exception) {}
+        if (bitmap == null) {
+            imageUri = backupUri
+            try {
+                bitmap = MediaStore.Images.Media.getBitmap(contentResolver, backupUri) ?: return
+            } catch (e: Exception) {
+                toast("Failed to load image")
+                return
+            }
+
+            val newFile = getCachePhoto()
+            val fos = newFile.outputStream()
+            bitmap.compress(Bitmap.CompressFormat.JPEG, 100, fos)
+            imageUri = getCachePhotoUri(newFile)
+        }
+
+        hideKeyboard()
+        lastPhotoIntentUri = getCachePhotoUri()
+        val cropIntent = Intent("com.android.camera.action.CROP").apply {
+            setDataAndType(imageUri, "image/*")
+            putExtra(MediaStore.EXTRA_OUTPUT, lastPhotoIntentUri)
+            putExtra("outputX", 512)
+            putExtra("outputY", 512)
+            putExtra("aspectX", 1)
+            putExtra("aspectY", 1)
+            putExtra("crop", "true")
+            putExtra("scale", "true")
+            putExtra("scaleUpIfNeeded", "true")
+            clipData = ClipData("Attachment", arrayOf("text/primaryUri-list"), ClipData.Item(lastPhotoIntentUri))
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_WRITE_URI_PERMISSION)
+        }
+
+        try {
+            startActivityForResult(cropIntent, REQUEST_CODE_CROP_PHOTO)
+        } catch (e: ActivityNotFoundException) {
+            isPhotoRemoved = false
+            selectedPhotoUri = imageUri
+            editPhotoImageView?.setImageURI(imageUri)
+        } catch (e: Exception) {
+            isPhotoRemoved = false
+            selectedPhotoUri = imageUri
+            editPhotoImageView?.setImageURI(imageUri)
+        }
+    }
+
+    private fun getCachePhoto(): File {
+        val imagesDir = File(cacheDir, "photos")
+        if (!imagesDir.exists()) {
+            imagesDir.mkdirs()
+        }
+        return File(imagesDir, "crop_photo.jpeg")
+    }
+
+    private fun getCachePhotoUri(file: File = getCachePhoto()): Uri {
+        return FileProvider.getUriForFile(this, "${packageName}.provider", file)
+    }
 
     private fun showEditContactDialog() {
         handlePermission(PERMISSION_WRITE_CONTACTS) { hasPerm ->
@@ -593,6 +730,7 @@ class ContactDetailsActivity : SimpleActivity() {
             val dialogBinding = DialogEditContactBinding.inflate(layoutInflater)
             selectedPhotoUri = null
             selectedCallerBgUri = null
+            isPhotoRemoved = false
 
             dialogBinding.editContactDialogTitle.text = if (contactId == -1L || isNewContact) "Create New Contact" else "Edit Contact"
 
@@ -614,14 +752,8 @@ class ContactDetailsActivity : SimpleActivity() {
             SimpleContactsHelper(this).loadContactImage(currentPhotoUriString, dialogBinding.editContactPhoto, contactName)
             editPhotoImageView = dialogBinding.editContactPhoto
 
-            dialogBinding.changePhotoButton.setOnClickListener {
-                val pickPhotoIntent = Intent(Intent.ACTION_PICK, MediaStore.Images.Media.EXTERNAL_CONTENT_URI)
-                try {
-                    startActivityForResult(pickPhotoIntent, REQUEST_CODE_PICK_PHOTO)
-                } catch (e: Exception) {
-                    toast("No photo picker available")
-                }
-            }
+            dialogBinding.editContactPhoto.setOnClickListener { trySetPhoto() }
+            dialogBinding.changePhotoButton.setOnClickListener { trySetPhoto() }
 
             // Pre-fill Caller Screen Wallpaper Photo
             editCallerBgImageView = dialogBinding.editCallerBgPhoto
@@ -986,8 +1118,14 @@ class ContactDetailsActivity : SimpleActivity() {
                     }
                 }
 
-                // 3. Update Contact Photo if newly picked
-                if (newPhotoUri != null && primaryRawId != -1L) {
+                // 3. Update Contact Photo if newly picked or remove photo if requested
+                if (isPhotoRemoved) {
+                    for (rId in rawContactIds) {
+                        val photoSelection = "${ContactsContract.Data.RAW_CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?"
+                        val photoArgs = arrayOf(rId.toString(), ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
+                        ops.add(ContentProviderOperation.newDelete(ContactsContract.Data.CONTENT_URI).withSelection(photoSelection, photoArgs).build())
+                    }
+                } else if (newPhotoUri != null && primaryRawId != -1L) {
                     try {
                         val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, newPhotoUri)
                         val stream = ByteArrayOutputStream()
@@ -1156,7 +1294,7 @@ class ContactDetailsActivity : SimpleActivity() {
                     }
                 }
 
-                if (newPhotoUri != null) {
+                if (!isPhotoRemoved && newPhotoUri != null) {
                     try {
                         val bitmap = MediaStore.Images.Media.getBitmap(contentResolver, newPhotoUri)
                         val stream = ByteArrayOutputStream()
@@ -1405,11 +1543,18 @@ class ContactDetailsActivity : SimpleActivity() {
                         }
                     }
                 }
+                REQUEST_CODE_TAKE_PHOTO -> {
+                    startCropPhotoIntent(lastPhotoIntentUri, data?.data)
+                }
                 REQUEST_CODE_PICK_PHOTO -> {
-                    val imageUri = data?.data
-                    if (imageUri != null) {
-                        selectedPhotoUri = imageUri
-                        editPhotoImageView?.setImageURI(imageUri)
+                    startCropPhotoIntent(data?.data, data?.data)
+                }
+                REQUEST_CODE_CROP_PHOTO -> {
+                    val cropUri = lastPhotoIntentUri
+                    if (cropUri != null) {
+                        isPhotoRemoved = false
+                        selectedPhotoUri = cropUri
+                        editPhotoImageView?.setImageURI(cropUri)
                     }
                 }
                 REQUEST_CODE_PICK_CALLER_BG -> {
@@ -1435,5 +1580,7 @@ class ContactDetailsActivity : SimpleActivity() {
         private const val REQUEST_CODE_PICK_RINGTONE = 1001
         private const val REQUEST_CODE_PICK_PHOTO = 1002
         private const val REQUEST_CODE_PICK_CALLER_BG = 1003
+        private const val REQUEST_CODE_TAKE_PHOTO = 1004
+        private const val REQUEST_CODE_CROP_PHOTO = 1005
     }
 }

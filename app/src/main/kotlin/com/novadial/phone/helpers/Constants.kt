@@ -38,3 +38,23 @@ const val TOGGLE_SPEAKER = PATH + "TOGGLE_SPEAKER"
 const val DISMISS_CALL_NOTIFICATION = PATH + "DISMISS_CALL_NOTIFICATION"
 
 const val DIALPAD_TONE_LENGTH_MS = 150L // The length of DTMF tones in milliseconds
+
+const val DEFAULT_FILE_NAME = "contacts.vcf"
+
+// phone number/email types for VCF
+const val CELL = "CELL"
+const val WORK = "WORK"
+const val HOME = "HOME"
+const val OTHER = "OTHER"
+const val PREF = "PREF"
+const val MAIN = "MAIN"
+const val FAX = "FAX"
+const val WORK_FAX = "WORK;FAX"
+const val HOME_FAX = "HOME;FAX"
+const val PAGER = "PAGER"
+const val MOBILE = "MOBILE"
+
+// IMs not supported by Ez-vcard
+const val HANGOUTS = "Hangouts"
+const val QQ = "QQ"
+const val JABBER = "Jabber"

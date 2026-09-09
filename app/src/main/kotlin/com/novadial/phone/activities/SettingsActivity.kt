@@ -12,21 +12,9 @@ import kotlinx.serialization.json.Json
 import org.fossify.commons.activities.ManageBlockedNumbersActivity
 import org.fossify.commons.dialogs.ChangeDateTimeFormatDialog
 import org.fossify.commons.dialogs.RadioGroupDialog
-import org.fossify.commons.extensions.baseConfig
-import org.fossify.commons.extensions.beVisibleIf
-import org.fossify.commons.extensions.getFontSizeText
-import org.fossify.commons.extensions.getProperPrimaryColor
-import org.fossify.commons.extensions.showErrorToast
-import org.fossify.commons.extensions.toast
-import org.fossify.commons.extensions.updateTextColors
-import org.fossify.commons.extensions.viewBinding
-import org.fossify.commons.helpers.FONT_SIZE_EXTRA_LARGE
-import org.fossify.commons.helpers.FONT_SIZE_LARGE
-import org.fossify.commons.helpers.FONT_SIZE_MEDIUM
-import org.fossify.commons.helpers.FONT_SIZE_SMALL
-import org.fossify.commons.helpers.NavigationIcon
-import org.fossify.commons.helpers.ON_CLICK_CALL_CONTACT
-import org.fossify.commons.helpers.ON_CLICK_VIEW_CONTACT
+import org.fossify.commons.extensions.*
+import org.fossify.commons.helpers.*
+import com.novadial.phone.models.Events
 import org.fossify.commons.helpers.TAB_CALL_HISTORY
 import org.fossify.commons.helpers.TAB_CONTACTS
 import org.fossify.commons.helpers.TAB_FAVORITES
@@ -57,6 +45,8 @@ class SettingsActivity : SimpleActivity() {
                 add("application/octet-stream")
             }
         }
+        private const val PICK_IMPORT_CONTACTS_INTENT = 3
+        private const val PICK_EXPORT_CONTACTS_INTENT = 4
     }
 
     private val binding by viewBinding(ActivitySettingsBinding::inflate)
@@ -129,6 +119,8 @@ class SettingsActivity : SimpleActivity() {
         setupMaxVolumeIncoming()
         setupCallsExport()
         setupCallsImport()
+        setupExportContacts()
+        setupImportContacts()
         updateTextColors(binding.settingsHolder)
 
         binding.apply {
@@ -145,6 +137,131 @@ class SettingsActivity : SimpleActivity() {
             }
         }
     }
+
+    private fun setupExportContacts() {
+        binding.settingsExportContactsHolder.setOnClickListener {
+            tryExportContacts()
+        }
+    }
+
+    private fun setupImportContacts() {
+        binding.settingsImportContactsHolder.setOnClickListener {
+            tryImportContacts()
+        }
+    }
+
+    private fun tryImportContacts() {
+        if (isQPlus()) {
+            Intent(Intent.ACTION_GET_CONTENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "text/x-vcard"
+
+                try {
+                    startActivityForResult(this, PICK_IMPORT_CONTACTS_INTENT)
+                } catch (e: android.content.ActivityNotFoundException) {
+                    toast(org.fossify.commons.R.string.system_service_disabled, android.widget.Toast.LENGTH_LONG)
+                } catch (e: Exception) {
+                    showErrorToast(e)
+                }
+            }
+        } else {
+            handlePermission(PERMISSION_READ_STORAGE) {
+                if (it) {
+                    importContacts()
+                }
+            }
+        }
+    }
+
+    private fun importContacts() {
+        org.fossify.commons.dialogs.FilePickerDialog(this) {
+            showImportContactsDialog(it) { refreshNeeded ->
+                if (refreshNeeded) {
+                    onContactsImportCompleted()
+                }
+            }
+        }
+    }
+
+    private fun tryExportContacts() {
+        if (isQPlus()) {
+            com.novadial.phone.dialogs.ExportContactsDialog(this, config.lastExportPath, true) { file, ignoredContactSources ->
+                this.ignoredExportContactSources = ignoredContactSources
+
+                Intent(Intent.ACTION_CREATE_DOCUMENT).apply {
+                    type = "text/x-vcard"
+                    putExtra(Intent.EXTRA_TITLE, file.name)
+                    addCategory(Intent.CATEGORY_OPENABLE)
+
+                    try {
+                        startActivityForResult(this, PICK_EXPORT_CONTACTS_INTENT)
+                    } catch (e: android.content.ActivityNotFoundException) {
+                        toast(org.fossify.commons.R.string.no_app_found, android.widget.Toast.LENGTH_LONG)
+                    } catch (e: Exception) {
+                        showErrorToast(e)
+                    }
+                }
+            }
+        } else {
+            handlePermission(PERMISSION_WRITE_STORAGE) {
+                if (it) {
+                    com.novadial.phone.dialogs.ExportContactsDialog(this, config.lastExportPath, false) { file, ignoredContactSources ->
+                        getFileOutputStream(file.toFileDirItem(this), true) { outputStream ->
+                            exportContactsTo(ignoredContactSources, outputStream)
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    private fun exportContactsTo(ignoredContactSources: HashSet<String>, outputStream: java.io.OutputStream?) {
+        org.fossify.commons.helpers.ContactsHelper(this).getContacts(getAll = true, ignoredContactSources = ignoredContactSources) { contacts ->
+            if (contacts.isEmpty()) {
+                toast(org.fossify.commons.R.string.no_entries_for_exporting)
+            } else {
+                com.novadial.phone.helpers.VcfExporter().exportContacts(
+                    context = this,
+                    outputStream = outputStream,
+                    contacts = contacts,
+                    showExportingToast = true
+                ) { result ->
+                    toast(
+                        when (result) {
+                            com.novadial.phone.helpers.VcfExporter.ExportResult.EXPORT_OK -> org.fossify.commons.R.string.exporting_successful
+                            com.novadial.phone.helpers.VcfExporter.ExportResult.EXPORT_PARTIAL -> org.fossify.commons.R.string.exporting_some_entries_failed
+                            else -> org.fossify.commons.R.string.exporting_failed
+                        }
+                    )
+                }
+            }
+        }
+    }
+
+    private fun onContactsImportCompleted() {
+        ContactsCache.invalidate()
+        org.greenrobot.eventbus.EventBus.getDefault().post(Events.ContactsUpdated())
+    }
+
+    override fun onActivityResult(requestCode: Int, resultCode: Int, resultData: Intent?) {
+        super.onActivityResult(requestCode, resultCode, resultData)
+        if (requestCode == PICK_IMPORT_CONTACTS_INTENT && resultCode == RESULT_OK && resultData?.data != null) {
+            tryImportContactsFromFile(resultData.data!!) { refreshNeeded ->
+                if (refreshNeeded) {
+                    onContactsImportCompleted()
+                }
+            }
+        } else if (requestCode == PICK_EXPORT_CONTACTS_INTENT && resultCode == RESULT_OK && resultData?.data != null) {
+            try {
+                val outputStream = contentResolver.openOutputStream(resultData.data!!)
+                exportContactsTo(ignoredExportContactSources, outputStream)
+            } catch (e: Exception) {
+                showErrorToast(e)
+            }
+        }
+    }
+
+    private var ignoredExportContactSources = HashSet<String>()
 
     override fun onCreateOptionsMenu(menu: Menu): Boolean {
         updateMenuItemColors(menu)

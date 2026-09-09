@@ -18,8 +18,15 @@ import org.fossify.commons.extensions.telecomManager
 import org.fossify.commons.helpers.KEY_PHONE
 import org.fossify.commons.helpers.ensureBackgroundThread
 import com.novadial.phone.helpers.Config
+import com.novadial.phone.helpers.DEFAULT_FILE_NAME
 import com.novadial.phone.helpers.MissedCallNotifier
+import com.novadial.phone.dialogs.ImportContactsDialog
 import com.novadial.phone.models.SIMAccount
+import org.fossify.commons.activities.BaseSimpleActivity
+import org.fossify.commons.extensions.getTempFile
+import org.fossify.commons.extensions.showErrorToast
+import org.fossify.commons.extensions.toast
+import java.io.File
 
 val Context.config: Config get() = Config.newInstance(applicationContext)
 
@@ -130,5 +137,41 @@ fun Activity.startAddContactIntent(phoneNumber: String) {
             }
         }
     }
+}
+
+fun BaseSimpleActivity.tryImportContactsFromFile(uri: Uri, callback: (Boolean) -> Unit) {
+    when (uri.scheme) {
+        "file" -> showImportContactsDialog(uri.path!!, callback)
+        "content" -> {
+            try {
+                val tempFile = copyUriToTempFile(uri, "import-${System.currentTimeMillis()}-$DEFAULT_FILE_NAME")
+                if (tempFile == null) {
+                    toast(org.fossify.commons.R.string.unknown_error_occurred)
+                    return
+                }
+
+                showImportContactsDialog(tempFile.absolutePath, callback)
+            } catch (e: Exception) {
+                showErrorToast(e)
+            }
+        }
+
+        else -> toast(org.fossify.commons.R.string.invalid_file_format)
+    }
+}
+
+fun BaseSimpleActivity.showImportContactsDialog(path: String, callback: (Boolean) -> Unit) {
+    ImportContactsDialog(this, path, callback)
+}
+
+fun Context.copyUriToTempFile(uri: Uri, name: String): File? {
+    val tempFile = getTempFile(name)
+    contentResolver.openInputStream(uri)?.use { input ->
+        java.io.FileOutputStream(tempFile).use { output ->
+            input.copyTo(output)
+        }
+    }
+
+    return tempFile
 }
 
