@@ -63,6 +63,7 @@ class MainActivity : SimpleActivity() {
 
     private val binding by viewBinding(ActivityMainBinding::inflate)
 
+    private var werePermissionsHandled = false
     private var launchedDialer = false
     private var storedShowTabs = 0
     private var storedFontSize = 0
@@ -292,7 +293,16 @@ class MainActivity : SimpleActivity() {
 
     private fun checkContactPermissions() {
         handlePermission(PERMISSION_READ_CONTACTS) {
-            initFragments()
+            werePermissionsHandled = true
+            if (it) {
+                handlePermission(PERMISSION_WRITE_CONTACTS) {
+                    handlePermission(PERMISSION_GET_ACCOUNTS) {
+                        initFragments()
+                    }
+                }
+            } else {
+                initFragments()
+            }            
         }
     }
 
