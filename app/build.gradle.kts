@@ -141,6 +141,7 @@ detekt {
 
 dependencies {
     implementation(libs.fossify.commons)
+    implementation(libs.ezvcard)
     implementation(libs.indicator.fast.scroll)
     implementation(libs.autofit.text.view)
     implementation(libs.kotlinx.serialization.json)

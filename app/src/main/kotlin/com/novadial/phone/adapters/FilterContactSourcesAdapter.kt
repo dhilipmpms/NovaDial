@@ -3,24 +3,24 @@ package com.novadial.phone.adapters
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
+import org.fossify.commons.activities.BaseSimpleActivity
 import org.fossify.commons.extensions.getProperBackgroundColor
 import org.fossify.commons.extensions.getProperPrimaryColor
 import org.fossify.commons.extensions.getProperTextColor
 import org.fossify.commons.helpers.SMT_PRIVATE
 import org.fossify.commons.models.contacts.ContactSource
-import com.novadial.phone.activities.SimpleActivity
 import com.novadial.phone.databinding.ItemFilterContactSourceBinding
 
 class FilterContactSourcesAdapter(
-    val activity: SimpleActivity,
+    val activity: BaseSimpleActivity,
     private val contactSources: List<ContactSource>,
-    private val displayContactSources: ArrayList<String>
+    private val displayContactSources: List<String>
 ) : RecyclerView.Adapter<FilterContactSourcesAdapter.ViewHolder>() {
 
     private val selectedKeys = HashSet<Int>()
 
     init {
-        contactSources.forEachIndexed { index, contactSource ->
+        contactSources.forEachIndexed { _, contactSource ->
             if (displayContactSources.contains(contactSource.name)) {
                 selectedKeys.add(contactSource.hashCode())
             }
@@ -44,8 +44,7 @@ class FilterContactSourcesAdapter(
     fun getSelectedContactSources() = contactSources.filter { selectedKeys.contains(it.hashCode()) }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
-        val binding = ItemFilterContactSourceBinding.inflate(activity.layoutInflater, parent, false)
-        return ViewHolder(binding.root)
+        return ViewHolder(ItemFilterContactSourceBinding.inflate(activity.layoutInflater, parent, false).root)
     }
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -65,13 +64,13 @@ class FilterContactSourcesAdapter(
                 val displayName = "${contactSource.publicName}$countText"
                 filterContactSourceCheckbox.text = displayName
                 filterContactSourceHolder.setOnClickListener { viewClicked(!isSelected, contactSource) }
-
-                return root
             }
+
+            return itemView
         }
 
         private fun viewClicked(select: Boolean, contactSource: ContactSource) {
-            toggleItemSelection(select, contactSource, adapterPosition)
+            toggleItemSelection(select, contactSource, bindingAdapterPosition)
         }
     }
 }
