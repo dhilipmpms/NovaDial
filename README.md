@@ -1,13 +1,18 @@
 <p align="center">
   <img src="fastlane/metadata/android/en-US/images/icon.png" width="160" height="160" alt="NovaDial Icon">
 </p>
+
 <h1 align="center">NovaDial</h1>
+
 <p align="center">
-  <strong>Call with Speed. Call with Privacy. Call with Style.</strong>
+  <strong>Call with Speed. Manage Contacts. Call with Privacy.</strong>
 </p>
+
 <p align="center">
-  Modern Android dialer focused on speed, privacy, AMOLED-friendly design, and a clean calling experience.
+  A modern, privacy-friendly Android Phone app combining a full-featured
+  dialer and complete contact management in one application.
 </p>
+
 <p align="center">
   <a href="https://f-droid.org/en/packages/com.novadial.phone/">
     <img
@@ -16,39 +21,109 @@
       width="220">
   </a>
 </p>
+
 <p align="center">
-  <a href="https://github.com/dhilipmpms/NovaDial/releases"><img src="https://img.shields.io/github/v/release/dhilipmpms/NovaDial?style=flat-square&color=blue" alt="Latest Release"></a>
-  <a href="LICENSE"><img src="https://img.shields.io/badge/License-GPL--3.0-green.svg?style=flat-square" alt="License"></a>
+  <a href="https://github.com/dhilipmpms/NovaDial/releases">
+    <img src="https://img.shields.io/github/v/release/dhilipmpms/NovaDial?style=flat-square&color=blue" alt="Latest Release">
+  </a>
+  <a href="LICENSE">
+    <img src="https://img.shields.io/badge/License-GPL--3.0-green.svg?style=flat-square" alt="License">
+  </a>
   <img src="https://img.shields.io/badge/Platform-Android-00C853?style=flat-square" alt="Platform">
   <img src="https://img.shields.io/badge/Design-Material--3-blueviolet?style=flat-square" alt="Material 3">
   <img src="https://img.shields.io/github/downloads/dhilipmpms/NovaDial/total" alt="Downloads">
 </p>
 
+---
+
+## About NovaDial
+
+**NovaDial is more than just a dialer.**
+
+It combines a powerful **Phone Dialer** and a complete **Contacts Manager**
+into one unified Android application.
+
+You can make calls, manage contacts, view call history, create and edit
+contacts, add contact photos, import and export contacts, and more —
+without needing to install a separate contacts application.
+
+### One app for your phone and contacts
+
+NovaDial brings together:
+
+-  Dialer
+-  Contacts
+-  Favorites
+-  Recent calls
+-  Maximum ringtone Volume feature
+-  Contact photos
+-  Contact creation and editing
+-  VCF contact import and export
+-  In-call experience
+-  QR and contact sharing
+-  Customization options
+
+All in one application.
 
 ---
 
-## About
-
-NovaDial is a community-driven fork of Fossify Phone with additional UI improvements, performance optimizations, customization options, and dialer enhancements.
-
-The goal of NovaDial is to provide a modern and feature-rich dialer while remaining lightweight, privacy-friendly, and open source.
-
 ## Features
 
-* Fast call history loading
-* Optimized recent calls view
-* Contact-centric call history
-* AMOLED Black theme support
-* Multiple Recents UI styles
-* Improved call history grouping
-* Modernized user interface
-* Material Design components
-* Dual SIM support
-* Contact management
-* Favorites support
-* Offline-first experience
-* No advertisements
-* Open source
+### Dialer
+
+- Fast and responsive dialer
+- Dual SIM support
+- Fast contact lookup
+- Direct calling from contacts and recent calls
+- Clean and modern dialer interface
+- Offline-first experience
+
+### Contacts
+
+NovaDial includes a built-in contact manager, so you don't need a
+separate Contacts application.
+
+- Create new contacts
+- Edit existing contacts
+- Delete contacts
+- Multiple phone numbers
+- Contact favorites
+- Contact photos
+- Camera photo capture
+- Contact details
+- QR code sharing
+- Contact sharing
+- Native Android contact integration
+- VCF import and export
+
+### Recent Calls
+
+- Fast call history loading
+- Optimized recent calls view
+- Contact-centric call history
+- Improved call history grouping
+- Multiple Recents UI styles
+- Quick actions from recent calls
+
+### Privacy
+
+NovaDial is designed with privacy in mind.
+
+- No advertisements
+- Open source
+- Offline-first
+- No unnecessary cloud dependency
+- Your contacts remain on your device unless you choose to share or
+  export them
+
+---
+
+### Stability
+
+Existing calling, Telecom, CallLog, and Recents functionality has been
+preserved while adding the new contact-management capabilities.
+
+---
 
 ## Screenshots
 
@@ -59,8 +134,9 @@ The goal of NovaDial is to provide a modern and feature-rich dialer while remain
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/4_en-US.png" width="30%" alt="Contact Details" />
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/5_en-US.png" width="30%" alt="QR Code" />
   <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/6_en-US.png" width="30%" alt="About" />
-
 </p>
+
+---
 
 ## Installation
 
