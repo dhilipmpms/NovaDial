@@ -20,7 +20,6 @@ import org.fossify.commons.adapters.MyRecyclerViewAdapter
 import org.fossify.commons.databinding.ItemContactWithoutNumberBinding
 import org.fossify.commons.databinding.ItemContactWithoutNumberGridBinding
 import org.fossify.commons.dialogs.ConfirmationDialog
-import org.fossify.commons.dialogs.FeatureLockedDialog
 import org.fossify.commons.extensions.*
 import org.fossify.commons.helpers.*
 import org.fossify.commons.interfaces.ItemMoveCallback

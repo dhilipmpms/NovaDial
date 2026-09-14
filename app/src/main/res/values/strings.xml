@@ -144,24 +144,6 @@
     <string name="not_default_dialer_reminder">Direct calling requires NovaDial to be the default phone app. Would you like to set it now?</string>
     <string name="default_phone_app_desc">Manage default phone application</string>
 
-    <!-- Override Fossify promotion strings from fossify-commons library.
-         These are deliberately set to empty/suppressed values so that:
-         1. The "All Fossify apps" section label in CustomizationActivity is not shown.
-         2. The "Apply theme to all Fossify Apps" text is not shown.
-         3. The "Requires Fossify Thank You" subtitle is not shown.
-         4. Purchase/donation dialog text is neutralized.
-         The apply_to_all_holder is already GONE by default in the layout and is only
-         made visible by showOrHideThankYouFeatures() when thank you IS installed, so
-         these overrides complete the removal of all visible Fossify promotion UI.
-    -->
-    <string name="all_fossify_apps"></string>
-    <string name="apply_to_all_apps"></string>
-    <string name="requires_fossify_thank_you"></string>
-    <string name="simple_thank_you"></string>
-    <string name="purchase_simple_thank_you"></string>
-    <string name="purchase_thank_you"></string>
-    <string name="features_locked"></string>
-    <string name="update_thank_you"></string>
 
     <!-- Custom Contact Name Format -->
     <string name="custom_contact_name_format">Custom contact name format</string>
