@@ -204,6 +204,12 @@ https://github.com/dhilipmpms
 NovaDial Repository:
 https://github.com/dhilipmpms/NovaDial
 
+## ☕ Support My Open Source Work
+
+If you find NovaDial or my other open-source projects useful, consider supporting my work:
+
+[![Buy Me a Coffee](https://www.buymeacoffee.com/assets/img/custom_images/yellow_img.png)](https://www.buymeacoffee.com/dhilipmpms)
+
 ## License
 
 NovaDial follows the same open-source license as the original Fossify Phone project.
