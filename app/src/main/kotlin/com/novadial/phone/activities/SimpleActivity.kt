@@ -6,6 +6,7 @@ import android.graphics.Color
 import android.os.Build
 import android.telecom.TelecomManager
 import android.util.Log
+import androidx.appcompat.app.AppCompatDelegate
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.fossify.commons.activities.BaseSimpleActivity
 import org.fossify.commons.extensions.getProperBackgroundColor
@@ -16,6 +17,11 @@ import com.novadial.phone.R
 import com.novadial.phone.extensions.config
 
 open class SimpleActivity : BaseSimpleActivity() {
+    override fun onCreate(savedInstanceState: android.os.Bundle?) {
+        AppCompatDelegate.setDefaultNightMode(AppCompatDelegate.MODE_NIGHT_YES)
+        super.onCreate(savedInstanceState)
+    }
+
     override fun getAppIconIDs() = arrayListOf(
         R.mipmap.ic_launcher_red,
         R.mipmap.ic_launcher_pink,
@@ -49,7 +55,7 @@ open class SimpleActivity : BaseSimpleActivity() {
     }
 
     fun getNovaBackgroundColor(): Int {
-        return if (config.novaAmoledBlack && isSystemInDarkMode()) {
+        return if (config.novaAmoledBlack) {
             Color.BLACK
         } else {
             getProperBackgroundColor()
