@@ -290,17 +290,25 @@ class SettingsActivity : SimpleActivity() {
         }
     }
 
+    private fun migrateObsoleteThemesIfNeeded() {
+        if (!config.isSystemThemeEnabled) {
+            val darkRedPrimary = ContextCompat.getColor(this, org.fossify.commons.R.color.theme_dark_red_primary_color)
+            val isDarkRed = config.primaryColor == darkRedPrimary
+            val isCustom = config.customPrimaryColor != 0 || config.customBackgroundColor != 0
+            if (!isDarkRed && !isCustom) {
+                config.isSystemThemeEnabled = true
+            }
+        }
+    }
+
     private fun setupNovaAppearance() {
+        migrateObsoleteThemesIfNeeded()
         binding.apply {
             settingsDynamicColors.isChecked = config.novaDynamicColors
             settingsDynamicColorsHolder.setOnClickListener {
                 settingsDynamicColors.toggle()
                 config.novaDynamicColors = settingsDynamicColors.isChecked
                 recreate()
-            }
-
-            if (!config.novaDynamicColors && config.backgroundColor != Color.BLACK) {
-                config.novaAmoledBlack = false
             }
 
             settingsAmoledBlack.isChecked = config.novaAmoledBlack
