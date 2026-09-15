@@ -57,6 +57,8 @@
     <string name="call_ended">Call Ended</string>
     <string name="call_ending">Call Ending</string>
     <string name="ongoing_call">Ongoing Call</string>
+    <string name="open_call">Open call</string>
+    <string name="hide">Hide</string>
     <string name="select_sim">Select a SIM for this call</string>
     <string name="always_use_this_sim">Always use this SIM for this number</string>
     <string name="unset_default_sim">Unset default SIM</string>
