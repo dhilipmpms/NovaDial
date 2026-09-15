@@ -1273,9 +1273,17 @@ class CallActivity : SimpleActivity() {
 
     private fun startFloatingButton(phoneNumber: String? = null) {
         if (Settings.canDrawOverlays(this)) {
-            val intent = Intent(this, FloatingButtonService::class.java)
-            intent.putExtra("phone_number", phoneNumber)
-            startService(intent)
+            val intent = Intent(this, FloatingButtonService::class.java).apply {
+                putExtra("phone_number", phoneNumber)
+            }
+            try {
+                if (isOreoPlus()) {
+                    startForegroundService(intent)
+                } else {
+                    startService(intent)
+                }
+            } catch (_: Exception) {
+            }
         } else {
             try {
                 val intent = Intent(
