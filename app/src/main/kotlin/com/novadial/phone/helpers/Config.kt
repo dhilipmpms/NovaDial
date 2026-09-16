@@ -22,8 +22,7 @@ class Config(context: Context) : BaseConfig(context) {
 
     init {
         if (!prefs.contains(NOVA_AMOLED_BLACK)) {
-            prefs.edit().putBoolean(NOVA_AMOLED_BLACK, true).apply()
-            backgroundColor = Color.BLACK
+            prefs.edit().putBoolean(NOVA_AMOLED_BLACK, false).apply()
         }
     }
 
@@ -145,7 +144,7 @@ class Config(context: Context) : BaseConfig(context) {
         set(novaDynamicColors) = prefs.edit().putBoolean(NOVA_DYNAMIC_COLORS, novaDynamicColors).apply()
 
     var novaAmoledBlack: Boolean
-        get() = prefs.getBoolean(NOVA_AMOLED_BLACK, true)
+        get() = prefs.getBoolean(NOVA_AMOLED_BLACK, false)
         set(novaAmoledBlack) = prefs.edit().putBoolean(NOVA_AMOLED_BLACK, novaAmoledBlack).apply()
 
     var alwaysShowFullscreen: Boolean

@@ -35,12 +35,14 @@ import com.google.zxing.MultiFormatWriter
 import java.io.File
 import org.fossify.commons.dialogs.ConfirmationDialog
 import org.fossify.commons.extensions.adjustAlpha
+import org.fossify.commons.extensions.adjustForContrast
 import org.fossify.commons.extensions.applyColorFilter
 import org.fossify.commons.extensions.beGone
 import org.fossify.commons.extensions.beVisible
 import org.fossify.commons.extensions.formatPhoneNumber
 import org.fossify.commons.extensions.getAlertDialogBuilder
 import org.fossify.commons.extensions.getContrastColor
+import org.fossify.commons.extensions.getProperBackgroundColor
 import org.fossify.commons.extensions.getProperTextColor
 import org.fossify.commons.extensions.hasPermission
 import org.fossify.commons.extensions.hideKeyboard
@@ -190,24 +192,74 @@ class ContactDetailsActivity : SimpleActivity() {
 
         setupActions()
         updateTextColors(binding.contactDetailsCoordinator)
-        binding.contactDetailsCoordinator.setBackgroundColor(resources.getColor(R.color.nova_amoled_black, theme))
+
+        val bgColor = getNovaBackgroundColor()
+        binding.contactDetailsCoordinator.setBackgroundColor(bgColor)
+        binding.contactDetailsAppbar.setBackgroundColor(bgColor)
+        binding.contactDetailsToolbar.setBackgroundColor(bgColor)
         binding.contactDetailsScrollView.setBackgroundColor(Color.TRANSPARENT)
 
-        val cardBgColor = resources.getColor(R.color.nova_card, theme)
+        val headerTextColor = bgColor.getContrastColor()
+        val headerSecondaryTextColor = headerTextColor.adjustAlpha(0.7f)
+        binding.contactName.setTextColor(headerTextColor)
+        binding.contactNumber.setTextColor(headerSecondaryTextColor)
+        binding.callActionText.setTextColor(headerTextColor)
+        binding.messageActionText.setTextColor(headerTextColor)
+        binding.videoCallActionText.setTextColor(headerTextColor)
+
+        val cardBgColor = if (config.novaAmoledBlack) {
+            Color.parseColor("#151515")
+        } else {
+            resources.getColor(R.color.nova_card, theme)
+        }
         binding.phoneNumbersCard.backgroundTintList = ColorStateList.valueOf(cardBgColor)
         binding.socialAppsCard.backgroundTintList = ColorStateList.valueOf(cardBgColor)
         binding.contactSettingsCard.backgroundTintList = ColorStateList.valueOf(cardBgColor)
 
-        binding.phoneNumbersTitle.setTextColor(accentColor)
-        binding.socialAppsIcon.applyColorFilter(accentColor)
-        binding.socialAppsTitle.setTextColor(accentColor)
-        binding.contactSettingsIcon.applyColorFilter(accentColor)
-        binding.contactSettingsTitle.setTextColor(accentColor)
+        val cardTextColor = cardBgColor.getContrastColor()
+        val cardSecondaryTextColor = cardTextColor.adjustAlpha(0.7f)
+        val cardHeaderColor = accentColor.adjustForContrast(cardBgColor)
 
-        val textColor = getProperTextColor()
-        binding.editContactIcon.applyColorFilter(textColor)
-        binding.customRingtoneIcon.applyColorFilter(textColor)
-        binding.shareContactIcon.applyColorFilter(textColor)
+        binding.phoneNumbersTitle.setTextColor(cardHeaderColor)
+        binding.socialAppsIcon.applyColorFilter(cardHeaderColor)
+        binding.socialAppsTitle.setTextColor(cardHeaderColor)
+        binding.contactSettingsIcon.applyColorFilter(cardHeaderColor)
+        binding.contactSettingsTitle.setTextColor(cardHeaderColor)
+
+        binding.whatsappText.setTextColor(cardTextColor)
+        binding.telegramText.setTextColor(cardTextColor)
+
+        binding.editContactTitle.setTextColor(cardTextColor)
+        binding.editContactSubtitle.setTextColor(cardSecondaryTextColor)
+        binding.editContactIcon.applyColorFilter(cardTextColor)
+
+        binding.customRingtoneTitle.setTextColor(cardTextColor)
+        binding.customRingtoneSubtitle.setTextColor(cardSecondaryTextColor)
+        binding.customRingtoneIcon.applyColorFilter(cardTextColor)
+
+        binding.shareContactTitle.setTextColor(cardTextColor)
+        binding.shareContactSubtitle.setTextColor(cardSecondaryTextColor)
+        binding.shareContactIcon.applyColorFilter(cardTextColor)
+
+        binding.qrCodeTitle.setTextColor(cardTextColor)
+        binding.qrCodeSubtitle.setTextColor(cardSecondaryTextColor)
+        binding.qrCodeIcon.applyColorFilter(cardTextColor)
+
+        binding.deleteContactTitle.setTextColor(cardTextColor)
+        binding.deleteContactSubtitle.setTextColor(cardSecondaryTextColor)
+        binding.deleteContactIcon.applyColorFilter(Color.parseColor("#FF453A"))
+
+        val dividerColor = cardTextColor.adjustAlpha(0.15f)
+        binding.divider1.setBackgroundColor(dividerColor)
+        binding.divider2.setBackgroundColor(dividerColor)
+        binding.divider3.setBackgroundColor(dividerColor)
+        binding.divider4.setBackgroundColor(dividerColor)
+
+        binding.messageActionIcon.backgroundTintList = ColorStateList.valueOf(cardBgColor)
+        binding.messageActionIcon.applyColorFilter(headerTextColor)
+        binding.videoCallActionIcon.backgroundTintList = ColorStateList.valueOf(cardBgColor)
+        binding.videoCallActionIcon.applyColorFilter(headerTextColor)
+
         loadContactData()
         if (isNewContact || autoEditPending || contactId == -1L) {
             autoEditPending = false
@@ -494,11 +546,24 @@ class ContactDetailsActivity : SimpleActivity() {
             binding.phoneNumbersCard.beGone()
         } else {
             binding.phoneNumbersCard.beVisible()
+            val cardBgColor = if (config.novaAmoledBlack) {
+                Color.parseColor("#151515")
+            } else {
+                resources.getColor(R.color.nova_card, theme)
+            }
+            val cardTextColor = cardBgColor.getContrastColor()
+            val cardSecondaryTextColor = cardTextColor.adjustAlpha(0.7f)
+            val accentColor = getNovaAccentColor()
+
             for (pData in phoneNumbersList) {
                 val itemBinding = ItemContactPhoneNumberBinding.inflate(layoutInflater, binding.phoneNumbersContainer, false)
                 val displayNumber = if (config.formatPhoneNumbers) pData.number.formatPhoneNumber() else pData.number
                 itemBinding.phoneNumberText.text = displayNumber
+                itemBinding.phoneNumberText.setTextColor(cardTextColor)
                 itemBinding.phoneTypeText.text = getPhoneTypeName(pData.type, pData.label)
+                itemBinding.phoneTypeText.setTextColor(cardSecondaryTextColor)
+                itemBinding.phoneCallIcon.applyColorFilter(accentColor.adjustForContrast(cardBgColor))
+                itemBinding.phoneSmsIcon.applyColorFilter(cardSecondaryTextColor)
 
                 itemBinding.phoneCallIcon.setOnClickListener {
                     startCallWithConfirmationCheck(pData.number, contactName)
@@ -732,7 +797,40 @@ class ContactDetailsActivity : SimpleActivity() {
             selectedCallerBgUri = null
             isPhotoRemoved = false
 
+            val dialogBgColor = getProperBackgroundColor()
+            val dialogTextColor = dialogBgColor.getContrastColor()
+            val dialogHintColor = dialogTextColor.adjustAlpha(0.5f)
+            val dialogAccentColor = getNovaAccentColor().adjustForContrast(dialogBgColor)
+
+            dialogBinding.root.setBackgroundColor(dialogBgColor)
             dialogBinding.editContactDialogTitle.text = if (contactId == -1L || isNewContact) "Create New Contact" else "Edit Contact"
+            dialogBinding.editContactDialogTitle.setTextColor(dialogTextColor)
+
+            dialogBinding.nameHeader.setTextColor(dialogAccentColor)
+            dialogBinding.accountHeader.setTextColor(dialogAccentColor)
+            dialogBinding.phoneNumbersHeader.setTextColor(dialogAccentColor)
+            dialogBinding.detailsHeader.setTextColor(dialogAccentColor)
+            dialogBinding.changePhotoButton.setTextColor(dialogAccentColor)
+            dialogBinding.changeCallerBgButton.setTextColor(dialogAccentColor)
+            dialogBinding.addPhoneNumberButton.setTextColor(dialogAccentColor)
+
+            val editTexts = listOf(
+                dialogBinding.editFirstName,
+                dialogBinding.editMiddleName,
+                dialogBinding.editSurname,
+                dialogBinding.editNickname,
+                dialogBinding.editEmail,
+                dialogBinding.editAddress,
+                dialogBinding.editNotes
+            )
+            for (et in editTexts) {
+                et.setTextColor(dialogTextColor)
+                et.setHintTextColor(dialogHintColor)
+            }
+
+            dialogBinding.cancelEditButton.setTextColor(dialogTextColor.adjustAlpha(0.7f))
+            dialogBinding.saveContactButton.backgroundTintList = ColorStateList.valueOf(dialogAccentColor)
+            dialogBinding.saveContactButton.setTextColor(dialogAccentColor.getContrastColor())
 
             // Pre-fill Name
             dialogBinding.editFirstName.setText(firstName)
@@ -787,6 +885,8 @@ class ContactDetailsActivity : SimpleActivity() {
                 for ((index, phoneData) in editPhoneList.withIndex()) {
                     val rowBinding = ItemEditPhoneNumberBinding.inflate(layoutInflater, dialogBinding.editPhoneNumbersContainer, false)
                     rowBinding.editPhoneNumber.setText(phoneData.number)
+                    rowBinding.editPhoneNumber.setTextColor(dialogTextColor)
+                    rowBinding.editPhoneNumber.setHintTextColor(dialogHintColor)
 
                     // Setup Spinner
                     val typeOptions = listOf("Mobile", "Home", "Work", "Other")

@@ -19,7 +19,6 @@
             android:id="@+id/phone_number_text"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:textColor="#FFFFFF"
             android:textSize="16sp"
             android:textStyle="bold"
             tools:text="+1 555-0199" />
@@ -29,7 +28,6 @@
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="2dp"
-            android:textColor="#8E8E93"
             android:textSize="12sp"
             tools:text="Mobile" />
     </LinearLayout>
