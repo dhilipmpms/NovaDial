@@ -15,7 +15,7 @@
     <string name="dialpad">அழைப்பு பலகை</string>
     <string name="hashtag">ஹேஷ்டேக்</string>
     <string name="call_number">தொலைபேசி எண்னை அழைக்கவும்</string>
-    <string name="app_launcher_name">NovaDial</string>
+    <string name="app_launcher_name">நோவாடயல்</string>
     <string name="accept">ஏற்றுக்கொள்க</string>
     <string name="accept_call">அழைப்பை ஏற்கவும்</string>
     <string name="always_use_this_sim">எப்போதும் இந்த எண்ணிற்கு இந்த சிம் ஐ பயன்படுத்தவும்</string>
@@ -127,4 +127,11 @@
     <string name="remove_photo">புகைப்படத்தை அகற்று</string>
     <string name="include_contact_sources">தொடர்பு ஆதாரங்களைச் சேர்க்கவும்</string>
     <string name="target_contact_source">இலக்கு தொடர்பு ஆதாரம்</string>
+    <string name="outgoing">வெளிச்செல்லும்</string>
+    <string name="missed">தவறவிட்டது</string>
+    <string name="amoled_black">AMOLED கருப்பு தீம்</string>
+    <string name="open_call">திறந்த அழைப்பு</string>
+    <string name="hide">மறை</string>
+    <string name="label_active_call">செயலில் உள்ள அழைப்பு</string>
+    <string name="label_conference_active">குழு அழைப்பு</string>
 </resources>
