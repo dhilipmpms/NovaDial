@@ -98,6 +98,11 @@ class FloatingButtonService : Service() {
             return START_NOT_STICKY
         }
 
+        if (CallManager.getRingingCall() != null || CallManager.getState() == Call.STATE_RINGING) {
+            removeFloatingView()
+            return START_STICKY
+        }
+
         if (isBubbleHiddenForCurrentCall()) {
             removeFloatingView()
             return START_STICKY
@@ -164,7 +169,7 @@ class FloatingButtonService : Service() {
     }
 
     private fun showFloatingViewIfNeeded() {
-        if (isBubbleHiddenForCurrentCall() || CallManager.getPhoneState() == NoCall) {
+        if (isBubbleHiddenForCurrentCall() || CallManager.getPhoneState() == NoCall || CallManager.getRingingCall() != null || CallManager.getState() == Call.STATE_RINGING) {
             removeFloatingView()
             return
         }
@@ -297,6 +302,8 @@ class FloatingButtonService : Service() {
             hiddenCallId = null
             removeFloatingView()
             stopSelf()
+        } else if (CallManager.getRingingCall() != null || CallManager.getState() == Call.STATE_RINGING) {
+            removeFloatingView()
         }
     }
 

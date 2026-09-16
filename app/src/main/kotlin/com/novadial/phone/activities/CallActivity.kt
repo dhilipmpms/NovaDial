@@ -153,7 +153,7 @@ class CallActivity : SimpleActivity() {
     override fun onPause() {
         isInForeground = false
         super.onPause()
-        if (!isCallEnded && CallManager.getPhoneState() != NoCall) {
+        if (!isCallEnded && CallManager.getPhoneState() != NoCall && CallManager.getRingingCall() == null && CallManager.getState() != Call.STATE_RINGING) {
             startFloatingButton(callContact?.number)
         }
     }
