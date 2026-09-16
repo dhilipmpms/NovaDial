@@ -4,22 +4,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/contact_details_coordinator"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#000000">
-
+    android:layout_height="match_parent">
     <org.fossify.commons.views.MyAppBarLayout
         android:id="@+id/contact_details_appbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="#000000">
+        android:layout_height="wrap_content">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/contact_details_toolbar"
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
-            android:background="#000000"
-            app:title=""
-            app:titleTextColor="#FFFFFF" />
+            app:title="" />
     </org.fossify.commons.views.MyAppBarLayout>
 
     <androidx.core.widget.NestedScrollView
@@ -59,7 +54,6 @@
                     android:layout_marginTop="16dp"
                     android:ellipsize="end"
                     android:maxLines="1"
-                    android:textColor="#FFFFFF"
                     android:textSize="26sp"
                     android:textStyle="bold"
                     tools:text="John Doe" />
@@ -69,7 +63,6 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:layout_marginTop="4dp"
-                    android:textColor="#8E8E93"
                     android:textSize="16sp"
                     tools:text="+1 555-1234" />
             </LinearLayout>
@@ -104,11 +97,11 @@
                         android:src="@drawable/ic_phone_vector" />
 
                     <org.fossify.commons.views.MyTextView
+                        android:id="@+id/call_action_text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:text="@string/call"
-                        android:textColor="#FFFFFF"
                         android:textSize="12sp" />
                 </LinearLayout>
 
@@ -129,16 +122,15 @@
                         android:layout_width="56dp"
                         android:layout_height="56dp"
                         android:background="@drawable/ripple_selector_background_circle"
-                        android:backgroundTint="#242426"
                         android:padding="16dp"
                         android:src="@drawable/ic_sms_vector" />
 
                     <org.fossify.commons.views.MyTextView
+                        android:id="@+id/message_action_text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:text="@string/message"
-                        android:textColor="#FFFFFF"
                         android:textSize="12sp" />
                 </LinearLayout>
 
@@ -159,16 +151,15 @@
                         android:layout_width="56dp"
                         android:layout_height="56dp"
                         android:background="@drawable/ripple_selector_background_circle"
-                        android:backgroundTint="#242426"
                         android:padding="16dp"
                         android:src="@drawable/ic_video_call" />
 
                     <org.fossify.commons.views.MyTextView
+                        android:id="@+id/video_call_action_text"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginTop="8dp"
                         android:text="@string/video_call"
-                        android:textColor="#FFFFFF"
                         android:textSize="12sp" />
                 </LinearLayout>
             </LinearLayout>
@@ -270,11 +261,11 @@
                         </FrameLayout>
 
                         <org.fossify.commons.views.MyTextView
+                            android:id="@+id/whatsapp_text"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:text="WhatsApp"
-                            android:textColor="#FFFFFF"
                             android:textSize="12sp" />
                     </LinearLayout>
 
@@ -308,11 +299,11 @@
                         </FrameLayout>
 
                         <org.fossify.commons.views.MyTextView
+                            android:id="@+id/telegram_text"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="8dp"
                             android:text="Telegram"
-                            android:textColor="#FFFFFF"
                             android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
@@ -387,28 +378,28 @@
                         android:orientation="vertical">
 
                         <org.fossify.commons.views.MyTextView
+                            android:id="@+id/edit_contact_title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/edit_contact"
-                            android:textColor="#FFFFFF"
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
                         <org.fossify.commons.views.MyTextView
+                            android:id="@+id/edit_contact_subtitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="Edit name, numbers, and photo"
-                            android:textColor="#8E8E93"
                             android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <View
+                    android:id="@+id/divider1"
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginTop="12dp"
-                    android:background="#242426" />
+                    android:layout_marginTop="12dp" />
 
                 <!-- Custom Ringtone Row -->
                 <LinearLayout
@@ -443,10 +434,10 @@
                         android:orientation="vertical">
 
                         <org.fossify.commons.views.MyTextView
+                            android:id="@+id/custom_ringtone_title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Custom Ringtone"
-                            android:textColor="#FFFFFF"
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
@@ -456,16 +447,15 @@
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="Default"
-                            android:textColor="#8E8E93"
                             android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <View
+                    android:id="@+id/divider2"
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginTop="12dp"
-                    android:background="#242426" />
+                    android:layout_marginTop="12dp" />
 
                 <!-- Share Contact Row -->
                 <LinearLayout
@@ -500,28 +490,28 @@
                         android:orientation="vertical">
 
                         <org.fossify.commons.views.MyTextView
+                            android:id="@+id/share_contact_title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="Share Contact"
-                            android:textColor="#FFFFFF"
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
                         <org.fossify.commons.views.MyTextView
+                            android:id="@+id/share_contact_subtitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="Send contact details to others"
-                            android:textColor="#8E8E93"
                             android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <View
+                    android:id="@+id/divider3"
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginTop="12dp"
-                    android:background="#242426" />
+                    android:layout_marginTop="12dp" />
 
                 <!-- QR Code Row -->
                 <LinearLayout
@@ -556,28 +546,28 @@
                         android:orientation="vertical">
 
                         <org.fossify.commons.views.MyTextView
+                            android:id="@+id/qr_code_title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="QR Code"
-                            android:textColor="#FFFFFF"
                             android:textSize="16sp"
                             android:textStyle="bold" />
 
                         <org.fossify.commons.views.MyTextView
+                            android:id="@+id/qr_code_subtitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="Show contact QR code"
-                            android:textColor="#8E8E93"
                             android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>
 
                 <View
+                    android:id="@+id/divider4"
                     android:layout_width="match_parent"
                     android:layout_height="1dp"
-                    android:layout_marginTop="12dp"
-                    android:background="#242426" />
+                    android:layout_marginTop="12dp" />
 
                 <!-- Delete Contact Row -->
                 <LinearLayout
@@ -613,6 +603,7 @@
                         android:orientation="vertical">
 
                         <org.fossify.commons.views.MyTextView
+                            android:id="@+id/delete_contact_title"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:text="@string/delete"
@@ -621,11 +612,11 @@
                             android:textStyle="bold" />
 
                         <org.fossify.commons.views.MyTextView
+                            android:id="@+id/delete_contact_subtitle"
                             android:layout_width="wrap_content"
                             android:layout_height="wrap_content"
                             android:layout_marginTop="2dp"
                             android:text="Delete contact from device"
-                            android:textColor="#8E8E93"
                             android:textSize="12sp" />
                     </LinearLayout>
                 </LinearLayout>

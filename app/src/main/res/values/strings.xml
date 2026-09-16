@@ -36,6 +36,8 @@
     <string name="nova_appearance">Nova appearance</string>
     <string name="dynamic_colors">Use dynamic colors</string>
     <string name="amoled_black">AMOLED black theme</string>
+    <string name="amoled_notice">AMOLED Black Mode is designed to work best with System Dark mode. When your device is using Light mode or another appearance, some screens may not adapt perfectly.</string>
+    <string name="enable">Enable</string>
 
     <!-- Dialpad -->
     <string name="dialpad">Dialpad</string>

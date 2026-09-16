@@ -35,6 +35,8 @@ import com.novadial.phone.models.RecentCall
 import java.util.Locale
 import kotlin.system.exitProcess
 
+import org.fossify.commons.dialogs.ConfirmationDialog
+
 class SettingsActivity : SimpleActivity() {
     companion object {
         private const val CALL_HISTORY_FILE_TYPE = "application/json"
@@ -312,16 +314,33 @@ class SettingsActivity : SimpleActivity() {
             }
 
             settingsAmoledBlack.isChecked = config.novaAmoledBlack
-            settingsAmoledBlackHolder.setOnClickListener {
-                settingsAmoledBlack.toggle()
-                val isChecked = settingsAmoledBlack.isChecked
-                config.novaAmoledBlack = isChecked
-                if (isChecked) {
-                    config.backgroundColor = Color.BLACK
+            val toggleAmoled = {
+                if (!config.novaAmoledBlack) {
+                    ConfirmationDialog(
+                        activity = this@SettingsActivity,
+                        message = getString(R.string.amoled_notice),
+                        positive = R.string.enable,
+                        negative = org.fossify.commons.R.string.cancel
+                    ) {
+                        settingsAmoledBlack.isChecked = true
+                        config.novaAmoledBlack = true
+                        config.backgroundColor = Color.BLACK
+                        recreate()
+                    }
                 } else {
+                    settingsAmoledBlack.isChecked = false
+                    config.novaAmoledBlack = false
                     config.backgroundColor = ContextCompat.getColor(this@SettingsActivity, org.fossify.commons.R.color.theme_dark_background_color)
+                    recreate()
                 }
-                recreate()
+            }
+
+            settingsAmoledBlackHolder.setOnClickListener {
+                toggleAmoled()
+            }
+            settingsAmoledBlack.setOnClickListener {
+                settingsAmoledBlack.isChecked = config.novaAmoledBlack
+                toggleAmoled()
             }
         }
     }

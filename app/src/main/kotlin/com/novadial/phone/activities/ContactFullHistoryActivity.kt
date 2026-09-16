@@ -15,9 +15,13 @@ import org.fossify.commons.helpers.PERMISSION_READ_CALL_LOG
 import com.novadial.phone.R
 import com.novadial.phone.adapters.ContactCallHistoryAdapter
 import com.novadial.phone.databinding.ActivityContactFullHistoryBinding
+import com.novadial.phone.extensions.config
 import com.novadial.phone.helpers.RecentsHelper
 import com.novadial.phone.models.CallLogItem
 import com.novadial.phone.models.RecentCall
+
+import android.graphics.Color
+import org.fossify.commons.extensions.adjustForContrast
 
 class ContactFullHistoryActivity : SimpleActivity() {
     private val binding by viewBinding(ActivityContactFullHistoryBinding::inflate)
@@ -45,9 +49,15 @@ class ContactFullHistoryActivity : SimpleActivity() {
         adapter = ContactCallHistoryAdapter(this)
         binding.contactFullHistoryList.adapter = adapter
 
+        val bgColor = getNovaBackgroundColor()
+        binding.contactFullHistoryCoordinator.setBackgroundColor(bgColor)
+        binding.contactFullHistoryAppbar.setBackgroundColor(bgColor)
+        binding.contactFullHistoryToolbar.setBackgroundColor(bgColor)
+        binding.contactFullHistoryToolbar.setTitleTextColor(bgColor.getContrastColor())
+        binding.contactFullHistoryFilterScroll.setBackgroundColor(bgColor)
+
         setupFilterChips()
         updateTextColors(binding.contactFullHistoryCoordinator)
-        binding.contactFullHistoryCoordinator.setBackgroundColor(resources.getColor(R.color.nova_amoled_black, theme))
 
         loadCallHistory()
     }
@@ -74,20 +84,31 @@ class ContactFullHistoryActivity : SimpleActivity() {
     }
 
     private fun updateFilterChipsUI() {
+        val bgColor = getNovaBackgroundColor()
         val accentColor = getNovaAccentColor()
-        val accentColorState = ColorStateList.valueOf(accentColor)
-        val unselectedBg = ColorStateList.valueOf(resources.getColor(R.color.nova_dark_gray, theme))
+        val selectedAccent = accentColor.adjustForContrast(bgColor)
+        val selectedBgState = ColorStateList.valueOf(selectedAccent)
+
+        val cardBgColor = if (config.novaAmoledBlack) {
+            Color.parseColor("#151515")
+        } else {
+            resources.getColor(R.color.nova_card, theme)
+        }
+        val unselectedBgState = ColorStateList.valueOf(cardBgColor)
+
+        val selectedTextColor = selectedAccent.getContrastColor()
+        val unselectedTextColor = cardBgColor.getContrastColor()
 
         binding.apply {
             arrayOf(chipAll, chipIncoming, chipOutgoing, chipMissed).forEachIndexed { index, textView ->
                 val isSelected = index == selectedFilter
                 if (isSelected) {
-                    textView.backgroundTintList = accentColorState
-                    textView.setTextColor(accentColor.getContrastColor())
+                    textView.backgroundTintList = selectedBgState
+                    textView.setTextColor(selectedTextColor)
                     textView.setTypeface(null, android.graphics.Typeface.BOLD)
                 } else {
-                    textView.backgroundTintList = unselectedBg
-                    textView.setTextColor(0xFFFFFFFF.toInt())
+                    textView.backgroundTintList = unselectedBgState
+                    textView.setTextColor(unselectedTextColor)
                     textView.setTypeface(null, android.graphics.Typeface.NORMAL)
                 }
             }

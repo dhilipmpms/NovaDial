@@ -82,37 +82,84 @@ class ContactCallHistoryActivity : SimpleActivity() {
             setupMaterialScrollListener(contactDetailsScrollView, contactCallHistoryAppbar)
         }
 
-        // Tint Call button with the accent color
+        val bgColor = getNovaBackgroundColor()
+        binding.contactCallHistoryCoordinator.setBackgroundColor(bgColor)
+        binding.contactCallHistoryAppbar.setBackgroundColor(bgColor)
+        binding.contactCallHistoryToolbar.setBackgroundColor(bgColor)
+        binding.contactDetailsScrollView.setBackgroundColor(Color.TRANSPARENT)
+
         val accentColor = getNovaAccentColor()
-        binding.callActionIcon.backgroundTintList = ColorStateList.valueOf(accentColor)
-        binding.callActionIcon.applyColorFilter(accentColor.getContrastColor())
+        val callBtnBgColor = accentColor.adjustForContrast(bgColor)
+        binding.callActionIcon.backgroundTintList = ColorStateList.valueOf(callBtnBgColor)
+        binding.callActionIcon.applyColorFilter(callBtnBgColor.getContrastColor())
 
         setupActions()
         updateTextColors(binding.contactCallHistoryCoordinator)
-        binding.contactCallHistoryCoordinator.setBackgroundColor(resources.getColor(R.color.nova_amoled_black, theme))
-        binding.contactDetailsScrollView.setBackgroundColor(Color.TRANSPARENT)
 
-        // Force card background colors to preserve them from updateTextColors overrides
-        val cardBgColor = resources.getColor(R.color.nova_card, theme)
+        val headerTextColor = bgColor.getContrastColor()
+        val headerSecondaryTextColor = headerTextColor.adjustAlpha(0.7f)
+        binding.contactName.setTextColor(headerTextColor)
+        binding.contactNumber.setTextColor(headerSecondaryTextColor)
+        binding.callActionText.setTextColor(headerTextColor)
+        binding.messageActionText.setTextColor(headerTextColor)
+        binding.videoCallActionText.setTextColor(headerTextColor)
+
+        val cardBgColor = if (config.novaAmoledBlack) {
+            Color.parseColor("#151515")
+        } else {
+            resources.getColor(R.color.nova_card, theme)
+        }
         binding.callStatisticsCard.backgroundTintList = ColorStateList.valueOf(cardBgColor)
         binding.recentActivityCard.backgroundTintList = ColorStateList.valueOf(cardBgColor)
         binding.socialAppsCard.backgroundTintList = ColorStateList.valueOf(cardBgColor)
         binding.contactSettingsCard.backgroundTintList = ColorStateList.valueOf(cardBgColor)
 
-        // Force header colors to preserve them from updateTextColors overrides
-        binding.recentActivityIcon.applyColorFilter(accentColor)
-        binding.recentActivityTitle.setTextColor(accentColor)
-        binding.socialAppsIcon.applyColorFilter(accentColor)
-        binding.socialAppsTitle.setTextColor(accentColor)
-        binding.contactSettingsIcon.applyColorFilter(accentColor)
-        binding.contactSettingsTitle.setTextColor(accentColor)
-        binding.callStatisticsTitle.setTextColor(accentColor)
+        val cardTextColor = cardBgColor.getContrastColor()
+        val cardSecondaryTextColor = cardTextColor.adjustAlpha(0.7f)
+        val cardHeaderColor = accentColor.adjustForContrast(cardBgColor)
 
-        // Force the icons inside the rounded squares to have proper visible tint (matching text color)
-        val textColor = getProperTextColor()
-        binding.customRingtoneIcon.applyColorFilter(textColor)
-        binding.shareContactIcon.applyColorFilter(textColor)
-        binding.qrCodeIcon.applyColorFilter(textColor)
+        binding.callStatisticsTitle.setTextColor(cardHeaderColor)
+        binding.recentActivityIcon.applyColorFilter(cardHeaderColor)
+        binding.recentActivityTitle.setTextColor(cardHeaderColor)
+        binding.socialAppsIcon.applyColorFilter(cardHeaderColor)
+        binding.socialAppsTitle.setTextColor(cardHeaderColor)
+        binding.contactSettingsIcon.applyColorFilter(cardHeaderColor)
+        binding.contactSettingsTitle.setTextColor(cardHeaderColor)
+
+        binding.totalCallsValue.setTextColor(cardTextColor)
+        binding.incomingCallsValue.setTextColor(cardTextColor)
+        binding.outgoingCallsValue.setTextColor(cardTextColor)
+        binding.missedCallsValue.setTextColor(cardTextColor)
+        binding.totalCallDurationLabel.setTextColor(cardSecondaryTextColor)
+        binding.totalCallDurationValue.setTextColor(cardTextColor)
+
+        binding.whatsappText.setTextColor(cardTextColor)
+        binding.telegramText.setTextColor(cardTextColor)
+
+        binding.customRingtoneTitle.setTextColor(cardTextColor)
+        binding.customRingtoneSubtitle.setTextColor(cardSecondaryTextColor)
+        binding.customRingtoneIcon.applyColorFilter(cardTextColor)
+
+        binding.shareContactTitle.setTextColor(cardTextColor)
+        binding.shareContactSubtitle.setTextColor(cardSecondaryTextColor)
+        binding.shareContactIcon.applyColorFilter(cardTextColor)
+
+        binding.qrCodeTitle.setTextColor(cardTextColor)
+        binding.qrCodeSubtitle.setTextColor(cardSecondaryTextColor)
+        binding.qrCodeIcon.applyColorFilter(cardTextColor)
+
+        binding.showFullHistoryButton.setTextColor(cardHeaderColor)
+
+        val dividerColor = cardTextColor.adjustAlpha(0.15f)
+        binding.divider1.setBackgroundColor(dividerColor)
+        binding.divider2.setBackgroundColor(dividerColor)
+        binding.divider3.setBackgroundColor(dividerColor)
+        binding.divider4.setBackgroundColor(dividerColor)
+
+        binding.messageActionIcon.backgroundTintList = ColorStateList.valueOf(cardBgColor)
+        binding.messageActionIcon.applyColorFilter(headerTextColor)
+        binding.videoCallActionIcon.backgroundTintList = ColorStateList.valueOf(cardBgColor)
+        binding.videoCallActionIcon.applyColorFilter(headerTextColor)
 
         queryContactInfo()
         loadCallHistory()
@@ -451,6 +498,27 @@ class ContactCallHistoryActivity : SimpleActivity() {
         val nameToUse = contactName ?: seedCall.name
         nameTextView.text = nameToUse
         phoneTextView.text = seedCall.phoneNumber
+
+        val dialogBgColor = getProperBackgroundColor()
+        val dialogTextColor = dialogBgColor.getContrastColor()
+        val dialogSecondaryTextColor = dialogTextColor.adjustAlpha(0.7f)
+        val dialogAccentColor = getNovaAccentColor().adjustForContrast(dialogBgColor)
+
+        dialogView.setBackgroundColor(dialogBgColor)
+
+        val topIconContainer = dialogView.findViewById<android.widget.FrameLayout>(R.id.qr_dialog_top_icon_container)
+        val topIcon = dialogView.findViewById<ImageView>(R.id.qr_dialog_top_icon)
+        val titleView = dialogView.findViewById<org.fossify.commons.views.MyTextView>(R.id.qr_dialog_title)
+
+        topIconContainer?.backgroundTintList = ColorStateList.valueOf(dialogAccentColor)
+        topIcon?.applyColorFilter(dialogAccentColor.getContrastColor())
+        titleView?.setTextColor(dialogTextColor)
+
+        nameTextView.setTextColor(dialogTextColor)
+        phoneTextView.setTextColor(dialogSecondaryTextColor)
+
+        closeButton.backgroundTintList = ColorStateList.valueOf(dialogAccentColor)
+        closeButton.setTextColor(dialogAccentColor.getContrastColor())
 
         getAlertDialogBuilder().apply {
             setupDialogStuff(dialogView, this) { alertDialog ->
