@@ -499,6 +499,27 @@ class ContactCallHistoryActivity : SimpleActivity() {
         nameTextView.text = nameToUse
         phoneTextView.text = seedCall.phoneNumber
 
+        val dialogBgColor = getProperBackgroundColor()
+        val dialogTextColor = dialogBgColor.getContrastColor()
+        val dialogSecondaryTextColor = dialogTextColor.adjustAlpha(0.7f)
+        val dialogAccentColor = getNovaAccentColor().adjustForContrast(dialogBgColor)
+
+        dialogView.setBackgroundColor(dialogBgColor)
+
+        val topIconContainer = dialogView.findViewById<android.widget.FrameLayout>(R.id.qr_dialog_top_icon_container)
+        val topIcon = dialogView.findViewById<ImageView>(R.id.qr_dialog_top_icon)
+        val titleView = dialogView.findViewById<org.fossify.commons.views.MyTextView>(R.id.qr_dialog_title)
+
+        topIconContainer?.backgroundTintList = ColorStateList.valueOf(dialogAccentColor)
+        topIcon?.applyColorFilter(dialogAccentColor.getContrastColor())
+        titleView?.setTextColor(dialogTextColor)
+
+        nameTextView.setTextColor(dialogTextColor)
+        phoneTextView.setTextColor(dialogSecondaryTextColor)
+
+        closeButton.backgroundTintList = ColorStateList.valueOf(dialogAccentColor)
+        closeButton.setTextColor(dialogAccentColor.getContrastColor())
+
         getAlertDialogBuilder().apply {
             setupDialogStuff(dialogView, this) { alertDialog ->
                 closeButton.setOnClickListener {

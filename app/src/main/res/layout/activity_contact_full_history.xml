@@ -4,21 +4,17 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/contact_full_history_coordinator"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    android:background="#000000">
+    android:layout_height="match_parent">
 
     <org.fossify.commons.views.MyAppBarLayout
         android:id="@+id/contact_full_history_appbar"
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:background="#000000">
+        android:layout_height="wrap_content">
 
         <com.google.android.material.appbar.MaterialToolbar
             android:id="@+id/contact_full_history_toolbar"
             android:layout_width="match_parent"
-            android:layout_height="?attr/actionBarSize"
-            android:background="#000000"
-            app:titleTextColor="#FFFFFF" />
+            android:layout_height="?attr/actionBarSize" />
     </org.fossify.commons.views.MyAppBarLayout>
 
     <LinearLayout
@@ -29,14 +25,14 @@
 
         <!-- Horizontal filter chips -->
         <HorizontalScrollView
+            android:id="@+id/contact_full_history_filter_scroll"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:scrollbars="none"
             android:paddingStart="16dp"
             android:paddingEnd="16dp"
             android:paddingTop="8dp"
-            android:paddingBottom="8dp"
-            android:background="#000000">
+            android:paddingBottom="8dp">
 
             <LinearLayout
                 android:layout_width="wrap_content"
@@ -52,7 +48,6 @@
                     android:paddingVertical="8dp"
                     android:background="@drawable/ripple_all_corners"
                     android:text="All"
-                    android:textColor="#FFFFFF"
                     android:textSize="14sp"
                     android:textStyle="bold"
                     android:clickable="true"
@@ -67,7 +62,6 @@
                     android:paddingVertical="8dp"
                     android:background="@drawable/ripple_all_corners"
                     android:text="Incoming"
-                    android:textColor="#FFFFFF"
                     android:textSize="14sp"
                     android:clickable="true"
                     android:focusable="true" />
@@ -81,7 +75,6 @@
                     android:paddingVertical="8dp"
                     android:background="@drawable/ripple_all_corners"
                     android:text="Outgoing"
-                    android:textColor="#FFFFFF"
                     android:textSize="14sp"
                     android:clickable="true"
                     android:focusable="true" />
@@ -95,7 +88,6 @@
                     android:paddingVertical="8dp"
                     android:background="@drawable/ripple_all_corners"
                     android:text="Missed"
-                    android:textColor="#FFFFFF"
                     android:textSize="14sp"
                     android:clickable="true"
                     android:focusable="true" />
