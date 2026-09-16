@@ -107,8 +107,18 @@ class CallActivity : SimpleActivity() {
             padBottomSystem = listOf(binding.callHolder),
         )
 
-        updateTextColors(binding.callHolder)
-        binding.callHolder.setBackgroundColor(getNovaBackgroundColor())
+        val callBgColor = android.graphics.Color.BLACK
+        val callFgColor = android.graphics.Color.WHITE
+        binding.callHolder.setBackgroundColor(callBgColor)
+        binding.apply {
+            callerNameLabel.setTextColor(callFgColor)
+            callerNumber.setTextColor(callFgColor)
+            callStatusLabel.setTextColor(callFgColor)
+            callDeclineLabel.setTextColor(callFgColor)
+            callAcceptLabel.setTextColor(callFgColor)
+            onHoldCallerName.setTextColor(callFgColor)
+            onHoldLabel.setTextColor(callFgColor)
+        }
         initButtons()
         addLockScreenFlags()
         CallManager.addListener(callCallback)
@@ -425,8 +435,8 @@ class CallActivity : SimpleActivity() {
             startArrowAnimation(callRightArrow, initialRightArrowX, initialRightArrowScaleX, initialRightArrowScaleY, rightArrowTranslation)
         }
 
-        callDraggable.drawable.mutate().setTint(getProperTextColor())
-        callDraggableBackground.drawable.mutate().setTint(getProperTextColor())
+        callDraggable.drawable.mutate().setTint(android.graphics.Color.WHITE)
+        callDraggableBackground.drawable.mutate().setTint(android.graphics.Color.WHITE)
 
         var lock = false
         callDraggable.setOnTouchListener { _, event ->
@@ -446,7 +456,7 @@ class CallActivity : SimpleActivity() {
                         callDraggableBackground.animate().alpha(0.2f)
                     }
                     callDraggable.setImageDrawable(getDrawable(R.drawable.ic_phone_down_vector))
-                    callDraggable.drawable.mutate().setTint(getProperTextColor())
+                    callDraggable.drawable.mutate().setTint(android.graphics.Color.WHITE)
                     callLeftArrow.animate().alpha(1f)
                     callRightArrow.animate().alpha(1f)
                     stopAnimation = false
