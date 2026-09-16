@@ -82,18 +82,19 @@ class ContactCallHistoryActivity : SimpleActivity() {
             setupMaterialScrollListener(contactDetailsScrollView, contactCallHistoryAppbar)
         }
 
-        val accentColor = getNovaAccentColor()
-        binding.callActionIcon.backgroundTintList = ColorStateList.valueOf(accentColor)
-        binding.callActionIcon.applyColorFilter(accentColor.getContrastColor())
-
-        setupActions()
-        updateTextColors(binding.contactCallHistoryCoordinator)
-
         val bgColor = getNovaBackgroundColor()
         binding.contactCallHistoryCoordinator.setBackgroundColor(bgColor)
         binding.contactCallHistoryAppbar.setBackgroundColor(bgColor)
         binding.contactCallHistoryToolbar.setBackgroundColor(bgColor)
         binding.contactDetailsScrollView.setBackgroundColor(Color.TRANSPARENT)
+
+        val accentColor = getNovaAccentColor()
+        val callBtnBgColor = accentColor.adjustForContrast(bgColor)
+        binding.callActionIcon.backgroundTintList = ColorStateList.valueOf(callBtnBgColor)
+        binding.callActionIcon.applyColorFilter(callBtnBgColor.getContrastColor())
+
+        setupActions()
+        updateTextColors(binding.contactCallHistoryCoordinator)
 
         val headerTextColor = bgColor.getContrastColor()
         val headerSecondaryTextColor = headerTextColor.adjustAlpha(0.7f)

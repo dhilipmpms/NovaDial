@@ -186,18 +186,19 @@ class ContactDetailsActivity : SimpleActivity() {
             setupMaterialScrollListener(contactDetailsScrollView, contactDetailsAppbar)
         }
 
-        val accentColor = getNovaAccentColor()
-        binding.callActionIcon.backgroundTintList = ColorStateList.valueOf(accentColor)
-        binding.callActionIcon.applyColorFilter(accentColor.getContrastColor())
-
-        setupActions()
-        updateTextColors(binding.contactDetailsCoordinator)
-
         val bgColor = getNovaBackgroundColor()
         binding.contactDetailsCoordinator.setBackgroundColor(bgColor)
         binding.contactDetailsAppbar.setBackgroundColor(bgColor)
         binding.contactDetailsToolbar.setBackgroundColor(bgColor)
         binding.contactDetailsScrollView.setBackgroundColor(Color.TRANSPARENT)
+
+        val accentColor = getNovaAccentColor()
+        val callBtnBgColor = accentColor.adjustForContrast(bgColor)
+        binding.callActionIcon.backgroundTintList = ColorStateList.valueOf(callBtnBgColor)
+        binding.callActionIcon.applyColorFilter(callBtnBgColor.getContrastColor())
+
+        setupActions()
+        updateTextColors(binding.contactDetailsCoordinator)
 
         val headerTextColor = bgColor.getContrastColor()
         val headerSecondaryTextColor = headerTextColor.adjustAlpha(0.7f)
