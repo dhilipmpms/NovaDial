@@ -33,6 +33,7 @@ class CallNotificationManager(private val context: Context) {
         private const val CALL_NOTIFICATION_ID = 42
         private const val ACCEPT_CALL_CODE = 0
         private const val DECLINE_CALL_CODE = 1
+        private var postedFullScreenIntentCallKey: String? = null
     }
 
     private val notificationManager = context.notificationManager
@@ -100,8 +101,16 @@ class CallNotificationManager(private val context: Context) {
         val callState = targetCall.getStateCompat()
         if (callState == Call.STATE_DISCONNECTED || callState == Call.STATE_DISCONNECTING) return
 
-        // Suppress FSI when there is already an active call (call-waiting scenario).
+        val callKey = getCallKey(targetCall)
+        if (callState != Call.STATE_RINGING && postedFullScreenIntentCallKey == callKey) {
+            postedFullScreenIntentCallKey = null
+        }
+
+        // Suppress FSI when there is already an active call (call-waiting scenario),
+        // or when FSI has already been posted for this ringing call session,
+        // or when CallActivity is already in the foreground.
         val isHighPriority = callState == Call.STATE_RINGING && activeOrHeldCall == null && !lowPriority
+        val shouldAttachFsi = isHighPriority && postedFullScreenIntentCallKey != callKey && !CallActivity.isInForeground
         val channelId = if (isHighPriority) "simple_dialer_call_high_priority" else "simple_dialer_call"
         createNotificationChannel(isHighPriority, channelId)
 
@@ -230,8 +239,9 @@ class CallNotificationManager(private val context: Context) {
             .setStyle(Notification.DecoratedCustomViewStyle())
             .setVisibility(Notification.VISIBILITY_PUBLIC)
 
-        if (isHighPriority) {
+        if (shouldAttachFsi) {
             builder.setFullScreenIntent(openAppPendingIntent, true)
+            postedFullScreenIntentCallKey = callKey
         }
 
         val notification = builder.build()
@@ -252,6 +262,11 @@ class CallNotificationManager(private val context: Context) {
                 notificationManager.notify(CALL_NOTIFICATION_ID, notification)
             }
         }
+    }
+
+    private fun getCallKey(call: Call): String {
+        val handle = call.details?.handle?.toString()?.takeIf { it.isNotEmpty() }
+        return handle ?: call.toString()
     }
 
     fun createNotificationChannel(isHighPriority: Boolean, channelId: String) {
@@ -275,6 +290,7 @@ class CallNotificationManager(private val context: Context) {
         lastPostedCallHandle = null
         lastPostedContact = null
         lastPostedAvatar = null
+        postedFullScreenIntentCallKey = null
         val service = context as? Service
         if (service != null) {
             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
