@@ -3,11 +3,16 @@ package com.novadial.phone.extensions
 import android.annotation.SuppressLint
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.telecom.PhoneAccount
 import android.telecom.PhoneAccountHandle
 import android.telecom.TelecomManager
+import android.telephony.TelephonyManager
 import android.util.Log
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import org.fossify.commons.R
 import org.fossify.commons.activities.BaseSimpleActivity
 import org.fossify.commons.dialogs.CallConfirmationDialog
@@ -24,6 +29,7 @@ import com.novadial.phone.BuildConfig
 import com.novadial.phone.activities.DialerActivity
 import com.novadial.phone.activities.SimpleActivity
 import com.novadial.phone.dialogs.SelectSIMDialog
+import com.novadial.phone.helpers.SpecialCodeDispatcher
 
 fun SimpleActivity.startCallIntent(
     recipient: String,
@@ -40,6 +46,9 @@ fun SimpleActivity.startCallIntent(
             phoneNumber = recipient,
             forceSimSelector = forceSimSelector
         ) { handle ->
+            if (SpecialCodeDispatcher.dispatch(this, recipient, handle)) {
+                return@getHandleToUse
+            }
             try {
                 if (handle != null) {
                     Bundle().apply {
@@ -103,6 +112,9 @@ fun BaseSimpleActivity.callContactWithSim(
         val handle = getAvailableSIMCardLabels()
             .sortedBy { it.id }
             .getOrNull(wantedSimIndex)?.handle
+        if (this is SimpleActivity && SpecialCodeDispatcher.dispatch(this, recipient, handle)) {
+            return@handlePermission
+        }
         try {
             val telUri = Uri.parse("tel:$recipient")
             if (handle != null) {

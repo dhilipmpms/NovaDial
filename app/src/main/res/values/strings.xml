@@ -171,4 +171,10 @@
     <string name="filename_without_vcf">Filename (without .vcf)</string>
     <string name="include_contact_sources">Include contact sources</string>
     <string name="target_contact_source">Target contact source</string>
+
+    <!-- MMI / USSD -->
+    <string name="mmi_failed">MMI code failed or invalid</string>
+    <string name="mmi_completed">MMI code completed</string>
+    <string name="ussd_failed">USSD request failed</string>
+    <string name="ussd_service_unavailable">USSD service unavailable</string>
 </resources>
