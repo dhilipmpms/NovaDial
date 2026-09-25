@@ -171,4 +171,17 @@
     <string name="filename_without_vcf">Filename (without .vcf)</string>
     <string name="include_contact_sources">Include contact sources</string>
     <string name="target_contact_source">Target contact source</string>
+
+    <!-- MMI / USSD -->
+    <string name="mmi_failed">MMI code failed or invalid</string>
+    <string name="mmi_completed">MMI code completed</string>
+    <string name="ussd_failed">USSD request failed</string>
+    <string name="ussd_service_unavailable">USSD service unavailable</string>
+
+    <!-- Call Screen Background -->
+    <string name="call_screen_background">Call screen background</string>
+    <string name="use_default_background">Use the default background</string>
+    <string name="choose_from_gallery">Choose from gallery</string>
+    <string name="remove_background">Remove background</string>
+    <string name="custom_background_set">Custom background set</string>
 </resources>

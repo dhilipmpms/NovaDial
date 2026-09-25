@@ -11,6 +11,7 @@ import org.fossify.commons.extensions.*
 import org.fossify.commons.helpers.REQUEST_CODE_SET_DEFAULT_DIALER
 import com.novadial.phone.R
 import com.novadial.phone.extensions.getHandleToUse
+import com.novadial.phone.helpers.SpecialCodeDispatcher
 
 class DialerActivity : SimpleActivity() {
     private var callNumber: Uri? = null
@@ -43,6 +44,10 @@ class DialerActivity : SimpleActivity() {
             }
 
             getHandleToUse(intent, callNumber.toString()) { handle ->
+                if (SpecialCodeDispatcher.dispatch(this, callNumber.toString(), handle)) {
+                    finish()
+                    return@getHandleToUse
+                }
                 if (handle != null) {
                     Bundle().apply {
                         putParcelable(TelecomManager.EXTRA_PHONE_ACCOUNT_HANDLE, handle)

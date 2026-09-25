@@ -705,6 +705,28 @@ class CallActivity : SimpleActivity() {
                 Glide.with(this@CallActivity)
                     .load(customBgUri)
                     .centerCrop()
+                    .listener(object : com.bumptech.glide.request.RequestListener<android.graphics.drawable.Drawable> {
+                        override fun onLoadFailed(
+                            e: com.bumptech.glide.load.engine.GlideException?,
+                            model: Any?,
+                            target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            callerBackgroundImage.beGone()
+                            callerBackgroundOverlay.beGone()
+                            return false
+                        }
+
+                        override fun onResourceReady(
+                            resource: android.graphics.drawable.Drawable,
+                            model: Any,
+                            target: com.bumptech.glide.request.target.Target<android.graphics.drawable.Drawable>?,
+                            dataSource: com.bumptech.glide.load.DataSource,
+                            isFirstResource: Boolean
+                        ): Boolean {
+                            return false
+                        }
+                    })
                     .into(callerBackgroundImage)
             } else {
                 callerBackgroundImage.beGone()
@@ -736,6 +758,13 @@ class CallActivity : SimpleActivity() {
 
     private fun getContactIdForNumber(number: String): Long {
         if (number.isEmpty()) return -1L
+        val cached = ContactsCache.getContactByNumber(number)
+        if (cached != null) {
+            val contactIdLong = cached.contactId.toLong()
+            val idLong = cached.id.toLong()
+            val cid = if (contactIdLong > 0L) contactIdLong else idLong
+            if (cid > 0L) return cid
+        }
         return try {
             val uri = Uri.withAppendedPath(ContactsContract.PhoneLookup.CONTENT_FILTER_URI, Uri.encode(number))
             contentResolver.query(uri, arrayOf(ContactsContract.PhoneLookup._ID), null, null, null)?.use { cursor ->

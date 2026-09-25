@@ -59,6 +59,8 @@ import com.novadial.phone.extensions.startCallWithConfirmationCheck
 import com.novadial.phone.extensions.startNovaContactDetailsIntent
 import com.novadial.phone.helpers.DIALPAD_TONE_LENGTH_MS
 import com.novadial.phone.helpers.RecentsHelper
+import com.novadial.phone.helpers.SpecialCodeDispatcher
+import com.novadial.phone.helpers.SpecialCodeType
 import com.novadial.phone.helpers.ToneGeneratorHelper
 import com.novadial.phone.models.SpeedDial
 import java.util.Locale
@@ -292,22 +294,9 @@ class DialpadActivity : SimpleActivity() {
             }
         }
     }
-
     private fun dialpadValueChanged(text: String) {
-        val len = text.length
-        if (len > 8 && text.startsWith("*#*#") && text.endsWith("#*#*")) {
-            val secretCode = text.substring(4, text.length - 4)
-            if (isOreoPlus()) {
-                if (isNovaDialDefaultDialer()) {
-                    getSystemService(TelephonyManager::class.java)?.sendDialerSpecialCode(secretCode)
-                } else {
-                    launchSetDefaultDialerIntentSafe()
-                }
-            } else {
-                val intent =
-                    Intent(SECRET_CODE_ACTION, "android_secret_code://$secretCode".toUri())
-                sendBroadcast(intent)
-            }
+        if (SpecialCodeDispatcher.classify(text) == SpecialCodeType.SECRET_CODE) {
+            SpecialCodeDispatcher.dispatch(this, text, null)
             return
         }
 
