@@ -362,6 +362,10 @@ class ContactDetailsActivity : SimpleActivity() {
                 pickCustomRingtone()
             }
 
+            callScreenBgRow.setOnClickListener {
+                showCallScreenBgOptions()
+            }
+
             shareContactRow.setOnClickListener {
                 shareContact()
             }
@@ -579,6 +583,7 @@ class ContactDetailsActivity : SimpleActivity() {
         }
 
         updateRingtoneSubtitle()
+        updateCallScreenBgSubtitle()
 
         if (autoEditPending || (isNewContact && contactId == -1L)) {
             autoEditPending = false
@@ -1266,7 +1271,7 @@ class ContactDetailsActivity : SimpleActivity() {
                 }
 
                 if (selectedCallerBgUri != null && contactId != -1L) {
-                    config.setContactCustomBackground(contactId, selectedCallerBgUri.toString())
+                    saveCallScreenBgToInternalStorage(contactId, selectedCallerBgUri)
                 }
 
                 ContactsCache.invalidate()
@@ -1454,7 +1459,7 @@ class ContactDetailsActivity : SimpleActivity() {
                 }
 
                 if (selectedCallerBgUri != null && newId > 0L) {
-                    config.setContactCustomBackground(newId, selectedCallerBgUri.toString())
+                    saveCallScreenBgToInternalStorage(newId, selectedCallerBgUri)
                 }
 
                 ContactsCache.invalidate()
@@ -1642,6 +1647,17 @@ class ContactDetailsActivity : SimpleActivity() {
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
+        if (requestCode == REQUEST_CODE_PICK_CALL_SCREEN_BG) {
+            if (resultCode == Activity.RESULT_OK) {
+                val bgUri = data?.data
+                if (bgUri != null && contactId != -1L) {
+                    saveCallScreenBgToInternalStorage(contactId, bgUri)
+                    toast("Call screen background updated")
+                }
+            }
+            return
+        }
+
         super.onActivityResult(requestCode, resultCode, data)
         if (resultCode == Activity.RESULT_OK) {
             when (requestCode) {
@@ -1690,6 +1706,101 @@ class ContactDetailsActivity : SimpleActivity() {
         }
     }
 
+    private fun updateCallScreenBgSubtitle() {
+        val bgUri = if (contactId != -1L) config.getContactCustomBackground(contactId) else null
+        val subtitleText = if (!bgUri.isNullOrEmpty()) {
+            getString(R.string.custom_background_set)
+        } else {
+            getString(R.string.use_default_background)
+        }
+        binding.callScreenBgSubtitle.text = subtitleText
+    }
+
+    private fun showCallScreenBgOptions() {
+        if (contactId == -1L) return
+        val items = ArrayList<String>()
+        items.add(getString(R.string.choose_from_gallery))
+        val existingBg = config.getContactCustomBackground(contactId)
+        if (!existingBg.isNullOrEmpty()) {
+            items.add(getString(R.string.remove_background))
+        }
+
+        getAlertDialogBuilder()
+            .setTitle(R.string.call_screen_background)
+            .setItems(items.toTypedArray()) { _, which ->
+                when (items[which]) {
+                    getString(R.string.choose_from_gallery) -> startPickCallScreenBgIntent()
+                    getString(R.string.remove_background) -> removeCallScreenBg()
+                }
+            }
+            .show()
+    }
+
+    private fun startPickCallScreenBgIntent() {
+        hideKeyboard()
+        val openDocIntent = Intent(Intent.ACTION_OPEN_DOCUMENT).apply {
+            addCategory(Intent.CATEGORY_OPENABLE)
+            type = "image/*"
+            addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_GRANT_PERSISTABLE_URI_PERMISSION)
+        }
+        try {
+            startActivityForResult(openDocIntent, REQUEST_CODE_PICK_CALL_SCREEN_BG)
+        } catch (e: Exception) {
+            val getContentIntent = Intent(Intent.ACTION_GET_CONTENT).apply {
+                addCategory(Intent.CATEGORY_OPENABLE)
+                type = "image/*"
+            }
+            try {
+                startActivityForResult(getContentIntent, REQUEST_CODE_PICK_CALL_SCREEN_BG)
+            } catch (e2: Exception) {
+                toast("No photo picker available")
+            }
+        }
+    }
+
+    private fun removeCallScreenBg() {
+        if (contactId != -1L) {
+            saveCallScreenBgToInternalStorage(contactId, null)
+            toast("Call screen background removed")
+        }
+    }
+
+    private fun saveCallScreenBgToInternalStorage(contactId: Long, sourceUri: Uri?) {
+        ensureBackgroundThread {
+            val bgDir = File(filesDir, "call_backgrounds")
+            if (!bgDir.exists()) {
+                bgDir.mkdirs()
+            }
+            val bgFile = File(bgDir, "call_bg_$contactId.jpg")
+
+            if (sourceUri == null) {
+                if (bgFile.exists()) {
+                    bgFile.delete()
+                }
+                config.setContactCustomBackground(contactId, null)
+            } else {
+                try {
+                    try {
+                        contentResolver.takePersistableUriPermission(sourceUri, Intent.FLAG_GRANT_READ_URI_PERMISSION)
+                    } catch (_: Exception) {}
+
+                    contentResolver.openInputStream(sourceUri)?.use { input ->
+                        bgFile.outputStream().use { output ->
+                            input.copyTo(output)
+                        }
+                    }
+                    val savedUriStr = Uri.fromFile(bgFile).toString()
+                    config.setContactCustomBackground(contactId, savedUriStr)
+                } catch (e: Exception) {
+                    config.setContactCustomBackground(contactId, sourceUri.toString())
+                }
+            }
+            runOnUiThread {
+                updateCallScreenBgSubtitle()
+            }
+        }
+    }
+
     companion object {
         const val EXTRA_CONTACT_ID = "contact_id"
         const val EXTRA_RAW_ID = "raw_id"
@@ -1704,5 +1815,6 @@ class ContactDetailsActivity : SimpleActivity() {
         private const val REQUEST_CODE_PICK_CALLER_BG = 1003
         private const val REQUEST_CODE_TAKE_PHOTO = 1004
         private const val REQUEST_CODE_CROP_PHOTO = 1005
+        private const val REQUEST_CODE_PICK_CALL_SCREEN_BG = 1006
     }
 }
