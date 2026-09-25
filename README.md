@@ -210,6 +210,16 @@ If you find NovaDial or my other open-source projects useful, consider supportin
 
 [![Buy Me a Coffee](https://www.buymeacoffee.com/assets/img/custom_images/yellow_img.png)](https://www.buymeacoffee.com/dhilipmpms)
 
+## 🌍 Translations
+
+NovaDial uses [Weblate](https://weblate.org/) for community translation
+management.
+
+Translations are maintained through our
+[NovaDial Weblate project](https://hosted.weblate.org/projects/novadial/).
+
+[![Translation status](https://hosted.weblate.org/widget/novadial/multi-auto.svg)](https://hosted.weblate.org/projects/novadial/)
+
 ## License
 
 NovaDial follows the same open-source license as the original Fossify Phone project.
