@@ -515,11 +515,16 @@ class ContactDetailsActivity : SimpleActivity() {
                 }
 
                 // Deduplicate by canonical phone number so ContactDetailsActivity displays each unique number only once
-                val seenCanonicalKeys = HashSet<String>()
                 for (pData in rawPhoneNumbers) {
-                    val canonicalKey = com.novadial.phone.extensions.getCanonicalPhoneNumber(pData.number)
-                    if (seenCanonicalKeys.add(canonicalKey)) {
+                    val existingIndex = phoneNumbersList.indexOfFirst { existing ->
+                        com.novadial.phone.extensions.arePhoneNumbersCanonicalEqual(pData.number, existing.number)
+                    }
+                    if (existingIndex == -1) {
                         phoneNumbersList.add(pData)
+                    } else {
+                        if (pData.number.contains("+") && !phoneNumbersList[existingIndex].number.contains("+")) {
+                            phoneNumbersList[existingIndex] = pData
+                        }
                     }
                 }
 
