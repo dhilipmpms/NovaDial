@@ -153,4 +153,6 @@
     <string name="choose_from_gallery">Выбрать из галереи</string>
     <string name="remove_background">Удалить фон</string>
     <string name="custom_background_set">Выбранный фон установлен</string>
+    <string name="mmi_completed">Команда MMI выполнена</string>
+    <string name="target_contact_source">Источник контакта</string>
 </resources>
