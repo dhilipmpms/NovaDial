@@ -89,7 +89,7 @@
     <string name="video_call">Wideorozmowa</string>
     <string name="total_call_duration">Łączny czas</string>
     <string name="call_stats_labels">Wszystkie Przychodzące Wychodzące Nieodebrane</string>
-    <string name="total">Wszystkie</string>
+    <string name="total">Wszystko</string>
     <string name="rejected">Odrzucone</string>
     <string name="blocked">Zablokowane</string>
     <string name="dynamic_colors">Użyj dynamicznych kolorów</string>
@@ -151,8 +151,8 @@
     <string name="ussd_failed">Żądanie USSD nie powiodło się</string>
     <string name="ussd_service_unavailable">Usługa USSD jest niedostępna</string>
     <string name="call_screen_background">Tło ekranu połączenia</string>
-    <string name="use_default_background">Użyj domyślnego tła</string>
+    <string name="use_default_background">Użycie domyślnego tła</string>
     <string name="choose_from_gallery">Wybierz z galerii</string>
     <string name="remove_background">Usuń tło</string>
-    <string name="custom_background_set">Ustawiono własne tło</string>
+    <string name="custom_background_set">Użycie własnego tła</string>
 </resources>
