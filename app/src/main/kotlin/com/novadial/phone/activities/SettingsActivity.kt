@@ -116,6 +116,7 @@ class SettingsActivity : SimpleActivity() {
         setupDialpadBeeps()
         setupShowCallConfirmation()
         setupDisableProximitySensor()
+        setupShowAudioRouteButtons()
         setupDisableSwipeToAnswer()
         setupAlwaysShowFullscreen()
         setupMaxVolumeIncoming()
@@ -614,6 +615,16 @@ class SettingsActivity : SimpleActivity() {
             settingsDisableProximitySensorHolder.setOnClickListener {
                 settingsDisableProximitySensor.toggle()
                 config.disableProximitySensor = settingsDisableProximitySensor.isChecked
+            }
+        }
+    }
+
+    private fun setupShowAudioRouteButtons() {
+        binding.apply {
+            settingsShowAudioRouteButtons.isChecked = config.showAudioRouteButtons
+            settingsShowAudioRouteButtonsHolder.setOnClickListener {
+                settingsShowAudioRouteButtons.toggle()
+                config.showAudioRouteButtons = settingsShowAudioRouteButtons.isChecked
             }
         }
     }

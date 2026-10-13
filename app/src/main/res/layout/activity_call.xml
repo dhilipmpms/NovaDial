@@ -372,7 +372,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginHorizontal="@dimen/medium_margin"
-            app:constraint_referenced_ids="call_toggle_microphone,call_toggle_speaker,call_dialpad,call_toggle_hold,call_add,call_manage,call_swap,call_merge"
+            app:constraint_referenced_ids="call_toggle_microphone,call_toggle_speaker,call_audio_earpiece,call_audio_bluetooth,call_dialpad,call_toggle_hold,call_add,call_manage,call_swap,call_merge"
             app:flow_horizontalGap="@dimen/activity_margin"
             app:flow_maxElementsWrap="3"
             app:flow_verticalGap="@dimen/activity_margin"
@@ -401,6 +401,30 @@
             android:contentDescription="@string/turn_speaker_on"
             android:padding="@dimen/activity_margin"
             android:src="@drawable/ic_volume_up_vector"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintHeight_max="@dimen/call_control_button_size" />
+
+        <ImageView
+            android:id="@+id/call_audio_earpiece"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/circle_background"
+            android:contentDescription="@string/audio_route_earpiece"
+            android:padding="@dimen/activity_margin"
+            android:src="@drawable/ic_volume_down_vector"
+            android:visibility="gone"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintHeight_max="@dimen/call_control_button_size" />
+
+        <ImageView
+            android:id="@+id/call_audio_bluetooth"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/circle_background"
+            android:contentDescription="@string/audio_route_bluetooth"
+            android:padding="@dimen/activity_margin"
+            android:src="@drawable/ic_bluetooth_audio_vector"
+            android:visibility="gone"
             app:layout_constraintDimensionRatio="1:1"
             app:layout_constraintHeight_max="@dimen/call_control_button_size" />
 

@@ -123,6 +123,10 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getBoolean(DISABLE_SWIPE_TO_ANSWER, false)
         set(disableSwipeToAnswer) = prefs.edit().putBoolean(DISABLE_SWIPE_TO_ANSWER, disableSwipeToAnswer).apply()
 
+    var showAudioRouteButtons: Boolean
+        get() = prefs.getBoolean(SHOW_AUDIO_ROUTE_BUTTONS, false)
+        set(showAudioRouteButtons) = prefs.edit().putBoolean(SHOW_AUDIO_ROUTE_BUTTONS, showAudioRouteButtons).apply()
+
     var wasOverlaySnackbarConfirmed: Boolean
         get() = prefs.getBoolean(WAS_OVERLAY_SNACKBAR_CONFIRMED, false)
         set(wasOverlaySnackbarConfirmed) = prefs.edit().putBoolean(WAS_OVERLAY_SNACKBAR_CONFIRMED, wasOverlaySnackbarConfirmed).apply()
