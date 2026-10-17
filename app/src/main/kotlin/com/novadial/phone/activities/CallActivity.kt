@@ -223,12 +223,8 @@ class CallActivity : SimpleActivity() {
             changeCallAudioRoute()
         }
 
-        callAudioEarpiece.setOnClickListener {
-            CallManager.setAudioRoute(CallAudioState.ROUTE_WIRED_OR_EARPIECE)
-        }
-
         callAudioBluetooth.setOnClickListener {
-            CallManager.setAudioRoute(CallAudioState.ROUTE_BLUETOOTH)
+            toggleBluetoothAudio()
         }
 
         callDialpad.setOnClickListener {
@@ -357,7 +353,7 @@ class CallActivity : SimpleActivity() {
         val bgColor = getProperBackgroundColor()
         val inactiveColor = getInactiveButtonColor()
         arrayOf(
-            callToggleMicrophone, callToggleSpeaker, callAudioEarpiece, callAudioBluetooth, callDialpad,
+            callToggleMicrophone, callToggleSpeaker, callAudioBluetooth, callDialpad,
             callToggleHold, callAdd, callSwap, callMerge, callManage
         ).forEach {
             it.applyColorFilter(bgColor.getContrastColor())
@@ -365,7 +361,7 @@ class CallActivity : SimpleActivity() {
         }
 
         arrayOf(
-            callToggleMicrophone, callToggleSpeaker, callAudioEarpiece, callAudioBluetooth, callDialpad,
+            callToggleMicrophone, callToggleSpeaker, callAudioBluetooth, callDialpad,
             callToggleHold, callAdd, callSwap, callMerge, callManage
         ).forEach { imageView ->
             imageView.setOnLongClickListener {
@@ -550,14 +546,15 @@ class CallActivity : SimpleActivity() {
         binding.dialpadInput.addCharacter(char)
     }
 
-    // separate one-tap route buttons replace the chooser, which is only needed when there are more than two routes
+    // a separate Bluetooth button replaces the chooser, so the speaker button can stay a one-tap toggle
     private fun shouldShowAudioRouteButtons(supportedAudioRoutes: Array<AudioRoute>) =
         config.showAudioRouteButtons && supportedAudioRoutes.contains(AudioRoute.BLUETOOTH)
 
     private fun changeCallAudioRoute() {
         val supportAudioRoutes = CallManager.getSupportedAudioRoutes()
         if (shouldShowAudioRouteButtons(supportAudioRoutes)) {
-            CallManager.setAudioRoute(CallAudioState.ROUTE_SPEAKER)
+            val newRoute = if (isSpeakerOn) CallAudioState.ROUTE_WIRED_OR_EARPIECE else CallAudioState.ROUTE_SPEAKER
+            CallManager.setAudioRoute(newRoute)
         } else if (supportAudioRoutes.contains(AudioRoute.BLUETOOTH)) {
             createOrUpdateAudioRouteChooser(supportAudioRoutes)
         } else {
@@ -600,7 +597,7 @@ class CallActivity : SimpleActivity() {
             isSpeakerOn = route == AudioRoute.SPEAKER
             val supportedAudioRoutes = CallManager.getSupportedAudioRoutes()
             if (shouldShowAudioRouteButtons(supportedAudioRoutes)) {
-                updateAudioRouteButtons(route, supportedAudioRoutes)
+                updateAudioRouteButtons(route)
             } else {
                 updateAudioRouteToggle(route, supportedAudioRoutes)
             }
@@ -613,30 +610,24 @@ class CallActivity : SimpleActivity() {
         }
     }
 
-    private fun updateAudioRouteButtons(route: AudioRoute, supportedAudioRoutes: Array<AudioRoute>) = binding.apply {
+    private fun toggleBluetoothAudio() {
+        val bluetoothOn = CallManager.getCallAudioRoute() == AudioRoute.BLUETOOTH
+        val newRoute = if (bluetoothOn) CallAudioState.ROUTE_WIRED_OR_EARPIECE else CallAudioState.ROUTE_BLUETOOTH
+        CallManager.setAudioRoute(newRoute)
+    }
+
+    private fun updateAudioRouteButtons(route: AudioRoute) = binding.apply {
         audioRouteChooserDialog?.dismissAllowingStateLoss()
         audioRouteChooserDialog = null
 
         callToggleSpeaker.apply {
-            contentDescription = getString(R.string.audio_route_speaker)
+            contentDescription = getString(if (isSpeakerOn) R.string.turn_speaker_off else R.string.turn_speaker_on)
             setImageResource(AudioRoute.SPEAKER.iconRes)
-        }
-
-        // a wired headset takes the place of the earpiece, so one button covers both
-        val wiredHeadsetConnected = supportedAudioRoutes.contains(AudioRoute.WIRED_HEADSET)
-        val privateRoute = if (wiredHeadsetConnected) AudioRoute.WIRED_HEADSET else AudioRoute.EARPIECE
-        callAudioEarpiece.apply {
-            contentDescription = getString(privateRoute.stringRes)
-            setImageResource(privateRoute.iconRes)
-            beVisible()
         }
         callAudioBluetooth.beVisible()
 
-        val privateRouteActive = route == AudioRoute.EARPIECE || route == AudioRoute.WIRED_HEADSET ||
-            route == AudioRoute.WIRED_OR_EARPIECE
         mapOf(
             callToggleSpeaker to (route == AudioRoute.SPEAKER),
-            callAudioEarpiece to privateRouteActive,
             callAudioBluetooth to (route == AudioRoute.BLUETOOTH)
         ).forEach { (button, active) ->
             toggleButtonColor(button, enabled = active)
@@ -646,7 +637,6 @@ class CallActivity : SimpleActivity() {
     }
 
     private fun updateAudioRouteToggle(route: AudioRoute, supportedAudioRoutes: Array<AudioRoute>) {
-        binding.callAudioEarpiece.beGone()
         binding.callAudioBluetooth.beGone()
         binding.callToggleSpeaker.apply {
             isSelected = false
