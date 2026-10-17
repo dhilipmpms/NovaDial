@@ -632,17 +632,24 @@ class CallActivity : SimpleActivity() {
         }
         callAudioBluetooth.beVisible()
 
-        toggleButtonColor(callToggleSpeaker, enabled = route == AudioRoute.SPEAKER)
         val privateRouteActive = route == AudioRoute.EARPIECE || route == AudioRoute.WIRED_HEADSET ||
             route == AudioRoute.WIRED_OR_EARPIECE
-        toggleButtonColor(callAudioEarpiece, enabled = privateRouteActive)
-        toggleButtonColor(callAudioBluetooth, enabled = route == AudioRoute.BLUETOOTH)
+        mapOf(
+            callToggleSpeaker to (route == AudioRoute.SPEAKER),
+            callAudioEarpiece to privateRouteActive,
+            callAudioBluetooth to (route == AudioRoute.BLUETOOTH)
+        ).forEach { (button, active) ->
+            toggleButtonColor(button, enabled = active)
+            // lets screen readers announce the active route, not just show it by color
+            button.isSelected = active
+        }
     }
 
     private fun updateAudioRouteToggle(route: AudioRoute, supportedAudioRoutes: Array<AudioRoute>) {
         binding.callAudioEarpiece.beGone()
         binding.callAudioBluetooth.beGone()
         binding.callToggleSpeaker.apply {
+            isSelected = false
             val bluetoothConnected = supportedAudioRoutes.contains(AudioRoute.BLUETOOTH)
             contentDescription = if (bluetoothConnected) {
                 getString(R.string.choose_audio_route)
