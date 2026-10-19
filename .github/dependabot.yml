@@ -7,17 +7,20 @@ updates:
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
-    groups:
-      kotlin:
-        patterns:
-          - "org.jetbrains.kotlin*"
-      android:
-        patterns:
-          - "com.android.tools.build:*"
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
+    ignore:
+      - dependency-name: "org.fossify:commons"
 
-  # GitHub Actions workflow updates
+  # GitHub Actions workflow dependencies
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
       interval: "weekly"
     open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore"
+      prefix-development: "chore"
+      include: "scope"
