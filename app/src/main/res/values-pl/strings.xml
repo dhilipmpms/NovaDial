@@ -155,4 +155,8 @@
     <string name="choose_from_gallery">Wybierz z galerii</string>
     <string name="remove_background">Usuń tło</string>
     <string name="custom_background_set">Użycie własnego tła</string>
+    <string name="no_blocked_numbers_found">Nie znaleziono zablokowanych numerów</string>
+    <string name="unblock_number_confirmation">Czy na pewno chcesz odblokować %s?</string>
+    <string name="add_a_blocked_number">Dodaj zablokowany numer</string>
+    <string name="show_audio_route_buttons">Wyświetlaj osobne przyciski głośnika i Bluetooth podczas połączeń</string>
 </resources>
