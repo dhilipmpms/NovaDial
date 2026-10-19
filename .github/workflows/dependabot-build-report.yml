@@ -9,12 +9,14 @@ on:
 
 permissions:
   actions: read
-  pull-requests: write
+  contents: read
   issues: write
+  pull-requests: read
 
 jobs:
   report:
-    name: Report build result
+    name: Comment on Dependabot PR
+    if: github.event.workflow_run.conclusion != 'cancelled'
     runs-on: ubuntu-latest
 
     steps:
@@ -25,49 +27,78 @@ jobs:
           path: report
           run-id: ${{ github.event.workflow_run.id }}
           github-token: ${{ github.token }}
-        continue-on-error: true
 
-      - name: Comment on pull request
+      - name: Report build result
         uses: actions/github-script@v7
+        env:
+          WORKFLOW_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
+          WORKFLOW_URL: ${{ github.event.workflow_run.html_url }}
         with:
           script: |
             const fs = require('fs');
-            const run = context.payload.workflow_run;
-            let prNumber = null;
 
             const file = 'report/pr-number.txt';
 
-            if (fs.existsSync(file)) {
-              prNumber = Number(fs.readFileSync(file, 'utf8').trim());
-            }
-
-            if (!prNumber && run.pull_requests?.length) {
-              prNumber = run.pull_requests[0].number;
-            }
-
-            if (!prNumber) {
-              core.notice('No PR number found; skipping comment.');
+            if (!fs.existsSync(file)) {
+              core.setFailed('PR number artifact was not found.');
               return;
             }
 
-            const conclusion = run.conclusion;
+            const raw = fs.readFileSync(file, 'utf8').trim();
+
+            if (!/^\d+$/.test(raw)) {
+              core.setFailed('Invalid PR number in artifact.');
+              return;
+            }
+
+            const prNumber = Number(raw);
+
+            // Verify that the PR still targets main and belongs to Dependabot.
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber
+            });
+
+            const author = pr.user?.login;
+
+            if (pr.base.ref !== 'main') {
+              core.setFailed('PR does not target main.');
+              return;
+            }
+
+            if (
+              author !== 'dependabot[bot]' &&
+              author !== 'app/dependabot'
+            ) {
+              core.setFailed('PR is not authored by Dependabot.');
+              return;
+            }
+
+            const conclusion = process.env.WORKFLOW_CONCLUSION;
             const passed = conclusion === 'success';
 
-            const status = passed ? '✅ PASSED' : '❌ FAILED';
+            const status = passed
+              ? '✅ PASSED'
+              : '❌ FAILED';
+
             const advice = passed
-              ? 'The release build succeeded. Review the dependency changes and test the affected functionality before merging.'
-              : 'Do not merge yet. Review the build logs and resolve the failure before merging.';
+              ? 'The Core Release build succeeded. Review the dependency changes and test the affected functionality before merging.'
+              : 'The build did not succeed. Review the workflow logs and fix any issues before merging.';
 
             const body = [
               '## 🤖 NovaDial Dependabot Build Report',
               '',
               `- **Build status:** ${status}`,
-              '- **Build command:** `./gradlew assembleCoreRelease`',
-              `- **Workflow run:** [View build logs](${run.html_url})`,
+              '- **Command:** `./gradlew assembleCoreRelease`',
+              `- **Workflow result:** ${conclusion}`,
+              `- **Build logs:** [View workflow run](${process.env.WORKFLOW_URL})`,
               '',
               advice,
               '',
-              '*This report checks compilation only. It does not automatically merge the PR.*'
+              '**Merge status:** Not merged automatically. Maintainer review is required.',
+              '',
+              '*This check verifies compilation only; it does not guarantee that every app feature works correctly.*'
             ].join('\n');
 
             await github.rest.issues.createComment({
