@@ -23,6 +23,12 @@ permissions:
 jobs:
   build:
     name: Build NovaDial Core Release
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      github.actor == 'dependabot[bot]' ||
+      github.event.pull_request.user.login == 'dependabot[bot]' ||
+      github.actor == 'app/dependabot' ||
+      github.event.pull_request.user.login == 'app/dependabot'
     runs-on: ubuntu-latest
     timeout-minutes: 45
 
@@ -32,15 +38,25 @@ jobs:
         env:
           EVENT_NAME: ${{ github.event_name }}
           ACTOR: ${{ github.actor }}
+          PR_AUTHOR: ${{ github.event.pull_request.user.login }}
           INPUT_PR: ${{ inputs.pr_number }}
           EVENT_PR: ${{ github.event.pull_request.number }}
         run: |
           if [ "$EVENT_NAME" = "workflow_dispatch" ]; then
+            if ! [[ "$INPUT_PR" =~ ^[0-9]+$ ]]; then
+              echo "Error: Invalid PR number '$INPUT_PR'. Must be a positive integer."
+              exit 1
+            fi
             echo "number=$INPUT_PR" >> "$GITHUB_OUTPUT"
-          elif [ "$ACTOR" = "dependabot[bot]" ]; then
-            echo "number=$EVENT_PR" >> "$GITHUB_OUTPUT"
+          elif [ "$EVENT_NAME" = "pull_request" ]; then
+            if [ "$PR_AUTHOR" = "dependabot[bot]" ] || [ "$PR_AUTHOR" = "app/dependabot" ] || [ "$ACTOR" = "dependabot[bot]" ]; then
+              echo "number=$EVENT_PR" >> "$GITHUB_OUTPUT"
+            else
+              echo "Error: This workflow only builds Dependabot PRs (PR author: '$PR_AUTHOR', actor: '$ACTOR')."
+              exit 1
+            fi
           else
-            echo "This workflow only builds Dependabot PRs."
+            echo "Error: Unsupported event '$EVENT_NAME'."
             exit 1
           fi
 
@@ -58,21 +74,38 @@ jobs:
 
           cat pr.json
 
-          BASE=$(jq -r '.baseRefName' pr.json)
-          AUTHOR=$(jq -r '.author.login' pr.json)
-          SHA=$(jq -r '.headRefOid' pr.json)
+          BASE=$(jq -r '.baseRefName // empty' pr.json)
+          AUTHOR=$(jq -r '.author.login // empty' pr.json)
+          SHA=$(jq -r '.headRefOid // empty' pr.json)
 
           if [ "$BASE" != "main" ]; then
-            echo "PR must target main."
+            echo "Error: PR must target main (targets '$BASE')."
             exit 1
           fi
 
           if [ "$AUTHOR" != "dependabot[bot]" ] && [ "$AUTHOR" != "app/dependabot" ]; then
-            echo "PR is not authored by Dependabot."
+            echo "Error: PR is not authored by Dependabot (author: '$AUTHOR')."
+            exit 1
+          fi
+
+          if [ -z "$SHA" ]; then
+            echo "Error: Could not determine PR head commit SHA."
             exit 1
           fi
 
           echo "sha=$SHA" >> "$GITHUB_OUTPUT"
+
+      - name: Save PR number artifact
+        run: |
+          mkdir -p pr
+          echo "${{ steps.pr.outputs.number }}" > pr/pr-number.txt
+
+      - name: Upload PR number artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependabot-pr-number
+          path: pr/pr-number.txt
+          retention-days: 1
 
       - name: Checkout exact PR commit
         uses: actions/checkout@v4
