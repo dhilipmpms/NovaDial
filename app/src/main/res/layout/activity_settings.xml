@@ -455,6 +455,21 @@
             </RelativeLayout>
 
             <RelativeLayout
+                android:id="@+id/settings_show_audio_route_buttons_holder"
+                style="@style/SettingsHolderSwitchStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <org.fossify.commons.views.MyMaterialSwitch
+                    android:id="@+id/settings_show_audio_route_buttons"
+                    style="@style/SettingsSwitchStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/show_audio_route_buttons" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
                 android:id="@+id/settings_disable_swipe_to_answer_holder"
                 style="@style/SettingsHolderSwitchStyle"
                 android:layout_width="match_parent"
