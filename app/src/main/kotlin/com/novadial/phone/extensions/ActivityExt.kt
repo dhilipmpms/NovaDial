@@ -126,19 +126,19 @@ fun getCanonicalPhoneNumber(number: String): String {
 
     if (!digitsAndPlus.startsWith("+") && digitsOnly.length == 12 && digitsOnly.startsWith("91")) {
         val subscriberNumber = digitsOnly.substring(2)
-        if (subscriberNumber.length == 10 && subscriberNumber.first() in '6'..'9') {
+        if (subscriberNumber.length == 10) {
             return subscriberNumber
         }
     }
 
     if (digitsOnly.length == 11 && digitsOnly.startsWith("0")) {
         val subscriberNumber = digitsOnly.substring(1)
-        if (subscriberNumber.length == 10 && subscriberNumber.first() in '6'..'9') {
+        if (subscriberNumber.length == 10) {
             return subscriberNumber
         }
     }
 
-    if (digitsOnly.length == 10 && (digitsOnly.first() in '6'..'9' || !digitsAndPlus.startsWith("+"))) {
+    if (digitsOnly.length == 10) {
         return digitsOnly
     }
 

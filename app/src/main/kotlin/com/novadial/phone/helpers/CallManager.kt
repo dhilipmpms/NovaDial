@@ -37,6 +37,14 @@ class CallManager {
                 override fun onConferenceableCallsChanged(call: Call, conferenceableCalls: MutableList<Call>) {
                     updateState()
                 }
+
+                override fun onChildrenChanged(call: Call, children: MutableList<Call>) {
+                    updateState()
+                }
+
+                override fun onParentChanged(call: Call, parent: Call) {
+                    updateState()
+                }
             })
 
             // Notify listeners that a second (or later) call has arrived.
@@ -75,21 +83,26 @@ class CallManager {
             }
         }
 
-        fun getActiveCall(): Call? = calls.find { it.getStateCompat() == Call.STATE_ACTIVE }
-        fun getConnectingCall(): Call? = calls.find { it.getStateCompat() == Call.STATE_CONNECTING || it.getStateCompat() == Call.STATE_DIALING }
-        fun getHeldCall(): Call? = calls.find { it.getStateCompat() == Call.STATE_HOLDING }
+        private fun isChildCall(c: Call): Boolean {
+            return c.parent != null || calls.any { it.isConference() && it.children.contains(c) }
+        }
+
+        fun getActiveCall(): Call? = calls.find { !isChildCall(it) && it.getStateCompat() == Call.STATE_ACTIVE }
+        fun getConnectingCall(): Call? = calls.find { !isChildCall(it) && (it.getStateCompat() == Call.STATE_CONNECTING || it.getStateCompat() == Call.STATE_DIALING) }
+        fun getHeldCall(): Call? = calls.find { !isChildCall(it) && it.getStateCompat() == Call.STATE_HOLDING }
         fun getRingingCall(): Call? = calls.find { it.getStateCompat() == Call.STATE_RINGING }
 
         fun getPhoneState(): PhoneState {
-            return when (calls.size) {
+            val topLevelCalls = calls.filter { !isChildCall(it) }
+            return when (topLevelCalls.size) {
                 0 -> NoCall
-                1 -> SingleCall(calls.first())
+                1 -> SingleCall(topLevelCalls.first())
                 else -> {
                     val primary = getPrimaryCall() ?: return NoCall
                     // Explicitly exclude RINGING calls from the held slot — a waiting/incoming
                     // call must never appear as the "on hold" call in TwoCalls.
-                    val held = getHeldCall()
-                        ?: calls.find {
+                    val held = topLevelCalls.find { it.getStateCompat() == Call.STATE_HOLDING }
+                        ?: topLevelCalls.find {
                             it != primary &&
                                 it.getStateCompat() != Call.STATE_RINGING &&
                                 it.getStateCompat() != Call.STATE_DISCONNECTED &&
@@ -143,13 +156,14 @@ class CallManager {
         }
 
         fun getPrimaryCall(): Call? {
+            val topLevelCalls = calls.filter { !isChildCall(it) }
             // RINGING is intentionally last — a waiting/incoming call must NEVER
             // displace an already-ACTIVE or HELD call as the primary call.
-            return getActiveCall()
-                ?: getConnectingCall()
-                ?: getHeldCall()
-                ?: calls.find { it.isConference() }
-                ?: calls.firstOrNull { it.getStateCompat() != Call.STATE_RINGING }
+            return topLevelCalls.find { it.getStateCompat() == Call.STATE_ACTIVE }
+                ?: topLevelCalls.find { it.getStateCompat() == Call.STATE_CONNECTING || it.getStateCompat() == Call.STATE_DIALING }
+                ?: topLevelCalls.find { it.getStateCompat() == Call.STATE_HOLDING }
+                ?: topLevelCalls.find { it.isConference() }
+                ?: topLevelCalls.firstOrNull { it.getStateCompat() != Call.STATE_RINGING }
                 ?: getRingingCall()
         }
 

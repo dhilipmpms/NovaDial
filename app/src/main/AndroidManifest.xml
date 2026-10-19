@@ -92,12 +92,11 @@
             android:parentActivityName=".activities.SettingsActivity" />
 
         <activity
-            android:name="org.fossify.commons.activities.ManageBlockedNumbersActivity"
+            android:name=".activities.ManageBlockedNumbersActivity"
             android:configChanges="orientation"
             android:exported="false"
             android:label="@string/blocked_numbers"
-            android:parentActivityName=".activities.SettingsActivity"
-            tools:replace="android:label" />
+            android:parentActivityName=".activities.SettingsActivity" />
 
         <activity
             android:name=".activities.ManageSpeedDialActivity"

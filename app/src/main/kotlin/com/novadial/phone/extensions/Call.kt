@@ -40,4 +40,4 @@ fun Call.isOutgoing(): Boolean {
 
 fun Call.hasCapability(capability: Int): Boolean = (details.callCapabilities and capability) != 0
 
-fun Call?.isConference(): Boolean = this?.details?.hasProperty(Call.Details.PROPERTY_CONFERENCE) == true
+fun Call?.isConference(): Boolean = this?.details?.hasProperty(Call.Details.PROPERTY_CONFERENCE) == true || this?.children?.isNotEmpty() == true

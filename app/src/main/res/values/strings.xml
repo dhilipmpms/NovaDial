@@ -32,6 +32,9 @@
     <string name="no_video_call_app">No video calling app found</string>
     <string name="rejected">Rejected</string>
     <string name="blocked">Blocked</string>
+    <string name="no_blocked_numbers_found">No blocked numbers found</string>
+    <string name="unblock_number_confirmation">Are you sure you want to unblock %s?</string>
+    <string name="add_a_blocked_number">Add a blocked number</string>
     <string name="answered_externally">Answered externally</string>
     <string name="nova_appearance">Nova appearance</string>
     <string name="dynamic_colors">Use dynamic colors</string>
