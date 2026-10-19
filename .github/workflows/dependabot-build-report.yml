@@ -1,0 +1,78 @@
+name: Dependabot Build Report
+
+on:
+  workflow_run:
+    workflows:
+      - Dependabot Build Check
+    types:
+      - completed
+
+permissions:
+  actions: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  report:
+    name: Report build result
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download PR number artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: dependabot-pr-number
+          path: report
+          run-id: ${{ github.event.workflow_run.id }}
+          github-token: ${{ github.token }}
+        continue-on-error: true
+
+      - name: Comment on pull request
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const run = context.payload.workflow_run;
+            let prNumber = null;
+
+            const file = 'report/pr-number.txt';
+
+            if (fs.existsSync(file)) {
+              prNumber = Number(fs.readFileSync(file, 'utf8').trim());
+            }
+
+            if (!prNumber && run.pull_requests?.length) {
+              prNumber = run.pull_requests[0].number;
+            }
+
+            if (!prNumber) {
+              core.notice('No PR number found; skipping comment.');
+              return;
+            }
+
+            const conclusion = run.conclusion;
+            const passed = conclusion === 'success';
+
+            const status = passed ? '✅ PASSED' : '❌ FAILED';
+            const advice = passed
+              ? 'The release build succeeded. Review the dependency changes and test the affected functionality before merging.'
+              : 'Do not merge yet. Review the build logs and resolve the failure before merging.';
+
+            const body = [
+              '## 🤖 NovaDial Dependabot Build Report',
+              '',
+              `- **Build status:** ${status}`,
+              '- **Build command:** `./gradlew assembleCoreRelease`',
+              `- **Workflow run:** [View build logs](${run.html_url})`,
+              '',
+              advice,
+              '',
+              '*This report checks compilation only. It does not automatically merge the PR.*'
+            ].join('\n');
+
+            await github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: prNumber,
+              body
+            });
