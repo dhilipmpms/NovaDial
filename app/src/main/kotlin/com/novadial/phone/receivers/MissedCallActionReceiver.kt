@@ -13,9 +13,17 @@ class MissedCallActionReceiver : BroadcastReceiver() {
         const val ACTION_CALL_BACK = "com.novadial.phone.ACTION_CALL_BACK"
         const val ACTION_MESSAGE = "com.novadial.phone.ACTION_MESSAGE"
         const val EXTRA_PHONE_NUMBER = "extra_phone_number"
+        const val ACTION_DISMISS = "com.novadial.phone.ACTION_DISMISS_MISSED_CALLS"
     }
 
     override fun onReceive(context: Context, intent: Intent) {
+        // Swiping the notification away means the user has seen it. Tell Telecom, otherwise the
+        // calls keep NEW=1 and Telecom re-reports all of them after every reboot (issue #99).
+        if (intent.action == ACTION_DISMISS) {
+            context.clearMissedCalls()
+            return
+        }
+
         val number = intent.getStringExtra(EXTRA_PHONE_NUMBER) ?: return
 
         when (intent.action) {
