@@ -1358,27 +1358,24 @@ class CallActivity : SimpleActivity() {
     // ── Floating Button ────────────────────────────────────────────────────
 
     private fun startFloatingButton(phoneNumber: String? = null) {
-        if (Settings.canDrawOverlays(this)) {
-            val intent = Intent(this, FloatingButtonService::class.java).apply {
-                putExtra("phone_number", phoneNumber)
+        // Called from onPause(), which also runs when the screen times out or turns off mid-call.
+        // Never open the overlay permission screen from here: it would cover the ongoing call
+        // and leave the user outside the call UI after waking the device (issue #88).
+        // MainActivity already offers the permission prompt.
+        if (!Settings.canDrawOverlays(this)) {
+            return
+        }
+
+        val intent = Intent(this, FloatingButtonService::class.java).apply {
+            putExtra("phone_number", phoneNumber)
+        }
+        try {
+            if (isOreoPlus()) {
+                startForegroundService(intent)
+            } else {
+                startService(intent)
             }
-            try {
-                if (isOreoPlus()) {
-                    startForegroundService(intent)
-                } else {
-                    startService(intent)
-                }
-            } catch (_: Exception) {
-            }
-        } else {
-            try {
-                val intent = Intent(
-                    Settings.ACTION_MANAGE_OVERLAY_PERMISSION,
-                    Uri.parse("package:$packageName")
-                )
-                startActivity(intent)
-            } catch (e: Exception) {
-            }
+        } catch (_: Exception) {
         }
     }
 
