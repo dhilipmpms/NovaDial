@@ -48,7 +48,13 @@ class SettingsActivity : SimpleActivity() {
         }
         private const val PICK_IMPORT_CONTACTS_INTENT = 3
         private const val PICK_EXPORT_CONTACTS_INTENT = 4
+
+        // Fossify's CustomizationActivity closes itself when "Main color" is tapped if the package
+        // isn't org.fossify.* and appRunCount exceeds this value (issue #80)
+        private const val CUSTOMIZATION_MAX_RUN_COUNT = 50
     }
+
+    private var appRunCountBeforeCustomization: Int? = null
 
     private val binding by viewBinding(ActivitySettingsBinding::inflate)
     private val json = Json {
@@ -87,6 +93,8 @@ class SettingsActivity : SimpleActivity() {
 
     override fun onResume() {
         super.onResume()
+        restoreAppRunCountAfterCustomization()
+        ensureValidAppIconColor()
         setupTopAppBar(binding.settingsAppbar, NavigationIcon.Arrow)
 
         setupCustomizeColors()
@@ -288,7 +296,23 @@ class SettingsActivity : SimpleActivity() {
 
     private fun setupCustomizeColors() {
         binding.settingsColorCustomizationHolder.setOnClickListener {
+            capAppRunCountForCustomization()
             startCustomizationActivity()
+        }
+    }
+
+    private fun capAppRunCountForCustomization() {
+        val runCount = baseConfig.appRunCount
+        if (runCount > CUSTOMIZATION_MAX_RUN_COUNT) {
+            appRunCountBeforeCustomization = runCount
+            baseConfig.appRunCount = CUSTOMIZATION_MAX_RUN_COUNT
+        }
+    }
+
+    private fun restoreAppRunCountAfterCustomization() {
+        appRunCountBeforeCustomization?.let {
+            baseConfig.appRunCount = it
+            appRunCountBeforeCustomization = null
         }
     }
 

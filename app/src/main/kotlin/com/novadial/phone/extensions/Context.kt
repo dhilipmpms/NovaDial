@@ -11,8 +11,12 @@ import android.net.Uri
 import android.os.PowerManager
 import android.telecom.TelecomManager
 import android.provider.ContactsContract
+import com.novadial.phone.R
 import com.novadial.phone.activities.ContactDetailsActivity
 import com.novadial.phone.helpers.ContactsCache
+import org.fossify.commons.extensions.baseConfig
+import org.fossify.commons.extensions.checkAppIconColor
+import org.fossify.commons.extensions.getAppIconColors
 import org.fossify.commons.extensions.launchActivityIntent
 import org.fossify.commons.extensions.telecomManager
 import org.fossify.commons.helpers.KEY_PHONE
@@ -175,3 +179,16 @@ fun Context.copyUriToTempFile(uri: Uri, name: String): File? {
     return tempFile
 }
 
+
+/**
+ * The library's Light/Dark presets store color_primary (#010101) as the app icon color. That value
+ * matches no launcher alias, so checkAppIconColor() disables all of them and the launcher icon
+ * disappears (issue #80). Fall back to the default icon color and re-enable its alias.
+ */
+fun Context.ensureValidAppIconColor() {
+    if (baseConfig.appIconColor !in getAppIconColors()) {
+        baseConfig.appIconColor = getColor(R.color.default_app_icon_color)
+        baseConfig.lastIconColor = 0
+        checkAppIconColor()
+    }
+}

@@ -38,6 +38,7 @@ import com.novadial.phone.dialogs.ChangeSortingDialog
 import com.novadial.phone.dialogs.FilterContactSourcesDialog
 import com.novadial.phone.extensions.clearMissedCalls
 import com.novadial.phone.extensions.config
+import com.novadial.phone.extensions.ensureValidAppIconColor
 import com.novadial.phone.extensions.handleFullScreenNotificationsPermission
 import com.novadial.phone.extensions.launchCreateNewContactIntent
 import com.novadial.phone.fragments.ContactsFragment
@@ -75,6 +76,7 @@ class MainActivity : SimpleActivity() {
         Log.d("StartupPerf", "[APP_START] Activity onCreate started at $appStartTime")
         super.onCreate(savedInstanceState)
         setContentView(binding.root)
+        ensureValidAppIconColor()
         appLaunched(BuildConfig.APPLICATION_ID)
         setupOptionsMenu()
         refreshMenuItems()
