@@ -101,20 +101,20 @@ jobs:
           echo "${{ steps.pr.outputs.number }}" > pr/pr-number.txt
 
       - name: Upload PR number artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dependabot-pr-number
           path: pr/pr-number.txt
           retention-days: 1
 
       - name: Checkout exact PR commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.details.outputs.sha }}
           persist-credentials: false
 
       - name: Set up JDK 21
-        uses: actions/setup-java@v5
+        uses: actions/setup-java@v6
         with:
           distribution: temurin
           java-version: "21"
