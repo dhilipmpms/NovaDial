@@ -30,7 +30,7 @@ jobs:
           github-token: ${{ github.token }}
 
       - name: Report build result
-        uses: actions/github-script@v7
+        uses: actions/github-script@v9
         env:
           WORKFLOW_CONCLUSION: ${{ github.event.workflow_run.conclusion }}
           WORKFLOW_URL: ${{ github.event.workflow_run.html_url }}
