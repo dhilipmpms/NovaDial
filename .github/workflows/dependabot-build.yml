@@ -101,7 +101,7 @@ jobs:
           echo "${{ steps.pr.outputs.number }}" > pr/pr-number.txt
 
       - name: Upload PR number artifact
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v7
         with:
           name: dependabot-pr-number
           path: pr/pr-number.txt
