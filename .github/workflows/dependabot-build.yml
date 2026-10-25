@@ -108,7 +108,7 @@ jobs:
           retention-days: 1
 
       - name: Checkout exact PR commit
-        uses: actions/checkout@v4
+        uses: actions/checkout@v7
         with:
           ref: ${{ steps.details.outputs.sha }}
           persist-credentials: false
