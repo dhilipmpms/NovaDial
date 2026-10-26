@@ -24,3 +24,12 @@
 
 # Keep org.fossify classes to preserve call stack package checks in getPackageName()
 -keep class org.fossify.** { *; }
+
+# ez-vcard instantiates parameter and property classes via reflection
+-keep,includedescriptorclasses class ezvcard.property.** { *; }
+-keep enum ezvcard.VCardVersion { *; }
+-dontwarn ezvcard.io.json.**
+-dontwarn freemarker.**
+-keep class ezvcard.parameter.** {
+    <init>(...);
+}

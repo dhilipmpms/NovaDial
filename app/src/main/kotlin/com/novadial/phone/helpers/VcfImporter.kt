@@ -7,6 +7,7 @@ import android.provider.ContactsContract.CommonDataKinds
 import android.provider.ContactsContract.CommonDataKinds.Im
 import android.provider.ContactsContract.CommonDataKinds.Phone
 import android.provider.ContactsContract.CommonDataKinds.StructuredPostal
+import android.util.Log
 import android.widget.Toast
 import androidx.core.content.FileProvider
 import ezvcard.Ezvcard
@@ -27,20 +28,29 @@ import org.fossify.commons.models.contacts.IM
 import org.fossify.commons.models.contacts.Organization
 import com.novadial.phone.helpers.VcfImporter.ImportResult.IMPORT_FAIL
 import com.novadial.phone.helpers.VcfImporter.ImportResult.IMPORT_OK
+import com.novadial.phone.extensions.getCanonicalPhoneNumber
 import com.novadial.phone.helpers.VcfImporter.ImportResult.IMPORT_PARTIAL
 import java.io.File
 import java.io.FileOutputStream
 import java.net.URLDecoder
 import java.time.LocalDate
 import java.util.Locale
+import java.util.concurrent.CountDownLatch
+import java.util.concurrent.TimeUnit
 
 class VcfImporter(val context: Context) {
+    companion object {
+        private const val TAG = "VcfImporter"
+        private const val EXISTING_CONTACTS_TIMEOUT_SECONDS = 30L
+    }
+
     enum class ImportResult {
         IMPORT_FAIL, IMPORT_OK, IMPORT_PARTIAL
     }
 
     private var contactsImported = 0
     private var contactsFailed = 0
+    private var contactsSkipped = 0
 
     fun importContacts(path: String, targetContactSource: String): ImportResult {
         try {
@@ -51,6 +61,7 @@ class VcfImporter(val context: Context) {
             }
 
             val ezContacts = Ezvcard.parse(inputStream).all()
+            val existingContactKeys = getExistingContactKeys(targetContactSource)
             for (ezContact in ezContacts) {
                 val structuredName = ezContact.structuredName
                 val prefix = structuredName?.prefixes?.firstOrNull() ?: ""
@@ -281,20 +292,62 @@ class VcfImporter(val context: Context) {
                     contact.mimetype = CommonDataKinds.Organization.CONTENT_ITEM_TYPE
                 }
 
+                // skip contacts that already exist, so importing the same file twice doesn't create duplicates
+                val contactKey = getContactKey(contact)
+                if (contactKey != null && contactKey in existingContactKeys) {
+                    contactsSkipped++
+                    continue
+                }
+
                 if (ContactsHelper(context).insertContact(contact)) {
                     contactsImported++
+                    contactKey?.let { existingContactKeys.add(it) }
+                } else {
+                    contactsFailed++
                 }
             }
         } catch (e: Exception) {
+            Log.e(TAG, "Failed to import contacts from $path", e)
             context.showErrorToast(e, Toast.LENGTH_LONG)
             contactsFailed++
         }
 
+        if (contactsSkipped > 0) {
+            Log.i(TAG, "Skipped $contactsSkipped contacts that already exist")
+        }
+
         return when {
-            contactsImported == 0 -> IMPORT_FAIL
+            contactsImported == 0 && contactsSkipped == 0 -> IMPORT_FAIL
+            contactsImported == 0 && contactsFailed > 0 -> IMPORT_FAIL
             contactsFailed > 0 -> IMPORT_PARTIAL
             else -> IMPORT_OK
         }
+    }
+
+    private fun getExistingContactKeys(targetContactSource: String): HashSet<String> {
+        val keys = HashSet<String>()
+        val latch = CountDownLatch(1)
+        ContactsHelper(context).getContacts(getAll = true, gettingDuplicates = true) { contacts ->
+            contacts.filter { it.source == targetContactSource }.mapNotNullTo(keys) { getContactKey(it) }
+            latch.countDown()
+        }
+
+        if (!latch.await(EXISTING_CONTACTS_TIMEOUT_SECONDS, TimeUnit.SECONDS)) {
+            Log.w(TAG, "Timed out loading existing contacts, duplicates will not be skipped")
+            return HashSet()
+        }
+        return keys
+    }
+
+    private fun getContactKey(contact: Contact): String? {
+        val name = contact.getNameToDisplay().trim().lowercase(Locale.getDefault())
+        val numbers = contact.phoneNumbers.map { getCanonicalPhoneNumber(it.value) }.filter { it.isNotEmpty() }.sorted()
+        val emails = contact.emails.map { it.value.trim().lowercase(Locale.getDefault()) }.filter { it.isNotEmpty() }.sorted()
+        if (name.isEmpty() && numbers.isEmpty() && emails.isEmpty()) {
+            return null
+        }
+
+        return "$name|${numbers.joinToString(",")}|${emails.joinToString(",")}"
     }
 
     private fun formatDateToDayCode(date: LocalDate): String {
