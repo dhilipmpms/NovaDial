@@ -155,4 +155,8 @@
     <string name="custom_background_set">Выбранный фон установлен</string>
     <string name="mmi_completed">Команда MMI выполнена</string>
     <string name="target_contact_source">Источник контакта</string>
+    <string name="no_blocked_numbers_found">Заблокированные номера не найдены</string>
+    <string name="unblock_number_confirmation">Вы уверены, что хотите разблокировать %s?</string>
+    <string name="add_a_blocked_number">Добавить заблокированный номер</string>
+    <string name="show_audio_route_buttons">Показывать отдельные кнопки динамика и Bluetooth во время звонков</string>
 </resources>
