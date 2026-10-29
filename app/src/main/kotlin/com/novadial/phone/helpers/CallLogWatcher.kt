@@ -78,6 +78,9 @@ object CallLogWatcher {
                         
                         // Update cache with the new call log entry in the background
                         updateCacheWithNewCall(context, latest)
+
+                        // Keep the launcher's "most called" shortcuts current
+                        FrequentContactsShortcutHelper.refresh(context)
                     } else if (latest.id != prevId) {
                         // Deletion or modification, trigger a normal refresh
                         Log.d(TAG, "Call log changed (not a new call), posting RefreshCallLog")

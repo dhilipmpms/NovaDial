@@ -111,6 +111,14 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getBoolean(GROUP_SUBSEQUENT_CALLS, true)
         set(groupSubsequentCalls) = prefs.edit().putBoolean(GROUP_SUBSEQUENT_CALLS, groupSubsequentCalls).apply()
 
+    var showFrequentContactsShortcuts: Boolean
+        get() = prefs.getBoolean(SHOW_FREQUENT_CONTACTS_SHORTCUTS, true)
+        set(showFrequentContactsShortcuts) = prefs.edit().putBoolean(SHOW_FREQUENT_CONTACTS_SHORTCUTS, showFrequentContactsShortcuts).apply()
+
+    var lastFrequentShortcutsSignature: String
+        get() = prefs.getString(LAST_FREQUENT_SHORTCUTS_SIGNATURE, "") ?: ""
+        set(lastFrequentShortcutsSignature) = prefs.edit().putString(LAST_FREQUENT_SHORTCUTS_SIGNATURE, lastFrequentShortcutsSignature).apply()
+
     var openDialPadAtLaunch: Boolean
         get() = prefs.getBoolean(OPEN_DIAL_PAD_AT_LAUNCH, false)
         set(openDialPad) = prefs.edit().putBoolean(OPEN_DIAL_PAD_AT_LAUNCH, openDialPad).apply()

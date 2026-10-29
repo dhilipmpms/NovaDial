@@ -27,6 +27,7 @@ import com.novadial.phone.databinding.ActivitySettingsBinding
 import com.novadial.phone.dialogs.ExportCallHistoryDialog
 import com.novadial.phone.dialogs.ManageVisibleTabsDialog
 import com.novadial.phone.extensions.*
+import com.novadial.phone.helpers.FrequentContactsShortcutHelper
 import com.novadial.phone.helpers.ContactsCache
 import com.novadial.phone.helpers.RecentsHelper
 import com.novadial.phone.helpers.RingtoneVolumeHelper
@@ -103,6 +104,7 @@ class SettingsActivity : SimpleActivity() {
         setupOnContactClick()
         setupDialPadOpen()
         setupGroupSubsequentCalls()
+        setupFrequentContactsShortcuts()
         setupStartNameWithSurname()
         setupCustomContactNameFormat()
         setupFormatPhoneNumbers()
@@ -495,6 +497,17 @@ class SettingsActivity : SimpleActivity() {
             settingsGroupSubsequentCallsHolder.setOnClickListener {
                 settingsGroupSubsequentCalls.toggle()
                 config.groupSubsequentCalls = settingsGroupSubsequentCalls.isChecked
+            }
+        }
+    }
+
+    private fun setupFrequentContactsShortcuts() {
+        binding.apply {
+            settingsFrequentContactsShortcuts.isChecked = config.showFrequentContactsShortcuts
+            settingsFrequentContactsShortcutsHolder.setOnClickListener {
+                settingsFrequentContactsShortcuts.toggle()
+                config.showFrequentContactsShortcuts = settingsFrequentContactsShortcuts.isChecked
+                FrequentContactsShortcutHelper.refresh(this@SettingsActivity)
             }
         }
     }
