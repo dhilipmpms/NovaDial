@@ -1,4 +1,8 @@
 [versions]
+#Testing
+junit = "4.13.2"
+robolectric = "4.16"
+androidxTestCore = "1.6.1"
 #jetbrains
 geocoderVersion = "3.35"
 kotlin = "2.4.10"
@@ -25,6 +29,9 @@ app-build-minimumSDK = "26"
 app-build-javaVersion = "VERSION_17"
 app-build-kotlinJVMTarget = "17"
 [libraries]
+junit = { module = "junit:junit", version.ref = "junit" }
+robolectric = { module = "org.robolectric:robolectric", version.ref = "robolectric" }
+androidx-test-core = { module = "androidx.test:core", version.ref = "androidxTestCore" }
 #EzVCard
 ezvcard = { module = "com.googlecode.ez-vcard:ez-vcard", version.ref = "ezvcard" }
 #Compose

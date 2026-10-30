@@ -117,6 +117,10 @@ android {
 
     namespace = project.property("APP_ID").toString()
 
+    testOptions {
+        unitTests.isIncludeAndroidResources = true
+    }
+
     lint {
         checkReleaseBuilds = false
         abortOnError = true
@@ -150,6 +154,10 @@ dependencies {
     implementation(libs.geocoder)
     implementation("com.google.zxing:core:3.5.3")
     detektPlugins(libs.compose.detekt)
+
+    testImplementation(libs.junit)
+    testImplementation(libs.robolectric)
+    testImplementation(libs.androidx.test.core)
 
     // Jetpack Compose dependencies for custom About page compilation
     implementation(platform("androidx.compose:compose-bom:2024.04.01"))

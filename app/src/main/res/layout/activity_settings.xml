@@ -425,6 +425,21 @@
             </RelativeLayout>
 
             <RelativeLayout
+                android:id="@+id/settings_frequent_contacts_shortcuts_holder"
+                style="@style/SettingsHolderSwitchStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <org.fossify.commons.views.MyMaterialSwitch
+                    android:id="@+id/settings_frequent_contacts_shortcuts"
+                    style="@style/SettingsSwitchStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/show_frequent_contacts_shortcuts" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
                 android:id="@+id/settings_show_call_confirmation_holder"
                 style="@style/SettingsHolderSwitchStyle"
                 android:layout_width="match_parent"

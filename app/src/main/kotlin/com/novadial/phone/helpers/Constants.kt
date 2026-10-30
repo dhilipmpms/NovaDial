@@ -8,6 +8,8 @@ import org.fossify.commons.helpers.TAB_FAVORITES
 const val SPEED_DIAL = "speed_dial"
 const val REMEMBER_SIM_PREFIX = "remember_sim_"
 const val GROUP_SUBSEQUENT_CALLS = "group_subsequent_calls"
+const val SHOW_FREQUENT_CONTACTS_SHORTCUTS = "show_frequent_contacts_shortcuts"
+const val LAST_FREQUENT_SHORTCUTS_SIGNATURE = "last_frequent_shortcuts_signature"
 const val OPEN_DIAL_PAD_AT_LAUNCH = "open_dial_pad_at_launch"
 const val DISABLE_PROXIMITY_SENSOR = "disable_proximity_sensor"
 const val DISABLE_SWIPE_TO_ANSWER = "disable_swipe_to_answer"
