@@ -9,7 +9,7 @@ kotlin = "2.4.10"
 kotlinxSerializationJson = "1.11.0"
 #Detekt
 detekt = "1.23.8"
-detektCompose = "0.4.28"
+detektCompose = "0.6.8"
 #Eventbus
 eventbus = "3.3.1"
 #Fossify
