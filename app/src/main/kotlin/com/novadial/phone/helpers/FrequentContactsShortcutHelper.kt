@@ -78,9 +78,10 @@ object FrequentContactsShortcutHelper {
                 emptyList()
             }
 
+            val action = callAction(context)
             val signature = frequents.joinToString("|") {
                 "${it.contact.lookupKey}:${it.number}:${it.contact.name}:${it.contact.photoUri}"
-            } + "#${config.appIconColor}"
+            } + "#${config.appIconColor}#$action"
             val existingIds = manager.dynamicShortcuts.map { it.id }.toSet()
             val expectedIds = frequents.map { shortcutId(it) }.toSet() + DIALPAD_SHORTCUT_ID
             if (signature == config.lastFrequentShortcutsSignature && existingIds == expectedIds) {
@@ -88,7 +89,7 @@ object FrequentContactsShortcutHelper {
             }
 
             val contactShortcuts = frequents.mapIndexed { index, ranked ->
-                buildShortcut(context, ranked, rank = fixed.size + index)
+                buildShortcut(context, ranked, action, rank = fixed.size + index)
             }
 
             val published = manager.setDynamicShortcuts(fixed + contactShortcuts)
@@ -175,10 +176,12 @@ object FrequentContactsShortcutHelper {
         }
     }
 
+    // Shortcut intents launch as this app, so a direct call works when we hold CALL_PHONE.
+    private fun callAction(context: Context) =
+        if (context.hasPermission(PERMISSION_CALL_PHONE)) Intent.ACTION_CALL else Intent.ACTION_DIAL
+
     @SuppressLint("MissingPermission")
-    private fun buildShortcut(context: Context, ranked: RankedContact, rank: Int): ShortcutInfo {
-        // Shortcut intents launch as this app, so a direct call works when we hold CALL_PHONE.
-        val action = if (context.hasPermission(PERMISSION_CALL_PHONE)) Intent.ACTION_CALL else Intent.ACTION_DIAL
+    private fun buildShortcut(context: Context, ranked: RankedContact, action: String, rank: Int): ShortcutInfo {
         // Uri.fromParts encodes the number, so characters like '#' can't alter the URI.
         val intent = Intent(action, Uri.fromParts("tel", ranked.number, null))
         val name = ranked.contact.name

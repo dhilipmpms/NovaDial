@@ -119,6 +119,23 @@ class FrequentContactsShortcutHelperTest {
     }
 
     @Test
+    fun callPermissionChangeRebuildsShortcutIntent() {
+        shadowOf(app).denyPermissions(Manifest.permission.CALL_PHONE)
+        addContact("5550001", 1, "Mom")
+        addCalls("5550001", 2)
+        FrequentContactsShortcutHelper.refreshNow(app)
+        assertEquals(Intent.ACTION_DIAL, contactShortcuts().single().intent!!.action)
+
+        shadowOf(app).grantPermissions(Manifest.permission.CALL_PHONE)
+        FrequentContactsShortcutHelper.refreshNow(app)
+        assertEquals(Intent.ACTION_CALL, contactShortcuts().single().intent!!.action)
+
+        shadowOf(app).denyPermissions(Manifest.permission.CALL_PHONE)
+        FrequentContactsShortcutHelper.refreshNow(app)
+        assertEquals("A revoked permission must not leave a direct-call shortcut", Intent.ACTION_DIAL, contactShortcuts().single().intent!!.action)
+    }
+
+    @Test
     fun withoutCallLogPermissionNoContactDataIsPublished() {
         shadowOf(app).denyPermissions(Manifest.permission.READ_CALL_LOG)
         seedThreeContacts()
