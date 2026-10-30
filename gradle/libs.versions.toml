@@ -5,7 +5,7 @@ robolectric = "4.16"
 androidxTestCore = "1.6.1"
 #jetbrains
 geocoderVersion = "3.35"
-kotlin = "2.4.10"
+kotlin = "2.4.21"
 kotlinxSerializationJson = "1.11.0"
 #Detekt
 detekt = "1.23.8"
