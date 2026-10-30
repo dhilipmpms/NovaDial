@@ -8,8 +8,10 @@ import android.provider.ContactsContract
 import android.util.Log
 import org.fossify.commons.extensions.baseConfig
 import org.fossify.commons.extensions.getMyContactsCursor
+import org.fossify.commons.extensions.hasPermission
 import org.fossify.commons.helpers.ContactsHelper
 import org.fossify.commons.helpers.MyContactsContentProvider
+import org.fossify.commons.helpers.PERMISSION_READ_CONTACTS
 import org.fossify.commons.helpers.SMT_PRIVATE
 import org.fossify.commons.helpers.ensureBackgroundThread
 import org.fossify.commons.models.PhoneNumber
@@ -43,6 +45,9 @@ object ContactsCache {
         Log.d(TAG, "[CONTACT_CACHE_MISS] Loading contacts from provider")
         ensureBackgroundThread {
             val start = System.currentTimeMillis()
+            // Checked before querying: a load without READ_CONTACTS comes back empty, and caching that
+            // would hide every contact until the process restarts, even after permission is granted.
+            val canReadContacts = context.hasPermission(PERMISSION_READ_CONTACTS)
             val privateCursor = context.getMyContactsCursor(favoritesOnly = false, withPhoneNumbersOnly = true)
             ContactsHelper(context).getContacts(getAll = true, showOnlyContactsWithNumbers = true) { deviceContacts ->
                 val allRaw = ArrayList(deviceContacts)
@@ -55,7 +60,9 @@ object ContactsCache {
                 }
 
                 val deduplicated = mergeAndDeduplicateContacts(allRaw)
-                cachedContacts = deduplicated
+                if (canReadContacts) {
+                    cachedContacts = deduplicated
+                }
                 cacheLoadTimeMs = System.currentTimeMillis() - start
                 Log.d(TAG, "[CONTACT_CACHE_LOADED] Cached ${deduplicated.size} contacts in ${cacheLoadTimeMs}ms (raw count: ${allRaw.size})")
                 ensureObserverRegistered(context)
