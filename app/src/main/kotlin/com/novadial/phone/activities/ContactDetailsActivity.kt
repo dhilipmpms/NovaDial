@@ -195,7 +195,7 @@ class ContactDetailsActivity : SimpleActivity() {
         val accentColor = getNovaAccentColor()
         val callBtnBgColor = accentColor.adjustForContrast(bgColor)
         binding.callActionIcon.backgroundTintList = ColorStateList.valueOf(callBtnBgColor)
-        binding.callActionIcon.applyColorFilter(callBtnBgColor.getContrastColor())
+        binding.callActionIcon.applyColorFilter(bgColor.getContrastColor())
 
         setupActions()
         updateTextColors(binding.contactDetailsCoordinator)

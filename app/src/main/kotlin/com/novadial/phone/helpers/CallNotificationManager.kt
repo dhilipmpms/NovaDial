@@ -117,12 +117,15 @@ class CallNotificationManager(private val context: Context) {
         val openAppIntent = CallActivity.getStartIntent(context)
         val openAppPendingIntent = PendingIntent.getActivity(context, 0, openAppIntent, PendingIntent.FLAG_MUTABLE)
 
+        // FLAG_UPDATE_CURRENT, not FLAG_CANCEL_CURRENT: the system drops notification updates when
+        // they are posted too quickly, so the visible notification can still hold an older
+        // PendingIntent. Cancelling it made Hang up/Accept do nothing until another update arrived.
         val acceptCallIntent = Intent(context, CallActionReceiver::class.java).apply { action = ACCEPT_CALL }
         val acceptPendingIntent = PendingIntent.getBroadcast(
             context,
             ACCEPT_CALL_CODE,
             acceptCallIntent,
-            PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         )
 
         val declineCallIntent = Intent(context, CallActionReceiver::class.java).apply { action = DECLINE_CALL }
@@ -130,7 +133,7 @@ class CallNotificationManager(private val context: Context) {
             context,
             DECLINE_CALL_CODE,
             declineCallIntent,
-            PendingIntent.FLAG_CANCEL_CURRENT or PendingIntent.FLAG_MUTABLE
+            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
         )
 
         val muteCallIntent = Intent(context, CallActionReceiver::class.java).apply { action = TOGGLE_MUTE }

@@ -48,11 +48,22 @@ object MissedCallNotifier {
                 context.getString(R.string.missed_calls, count)
             }
 
+            val dismissIntent = Intent(context, MissedCallActionReceiver::class.java).apply {
+                action = MissedCallActionReceiver.ACTION_DISMISS
+            }
+            val dismissPendingIntent = PendingIntent.getBroadcast(
+                context,
+                3,
+                dismissIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
+            )
+
             val builder = NotificationCompat.Builder(context, MISSED_CALL_CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_call_missed_notification)
                 .setContentTitle(title)
                 .setContentText(text)
                 .setContentIntent(contentPendingIntent)
+                .setDeleteIntent(dismissPendingIntent)
                 .setCategory(NotificationCompat.CATEGORY_MISSED_CALL)
                 .setAutoCancel(true)
                 .setPriority(NotificationCompat.PRIORITY_HIGH)
