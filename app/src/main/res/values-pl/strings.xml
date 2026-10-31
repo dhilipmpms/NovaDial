@@ -86,7 +86,7 @@
     <string name="outgoing">Wychodzące</string>
     <string name="missed">Nieodebrane</string>
     <string name="message">Wiadomość</string>
-    <string name="video_call">Wideorozmowa</string>
+    <string name="video_call">Rozmowa wideo</string>
     <string name="total_call_duration">Łączny czas</string>
     <string name="call_stats_labels">Wszystkie Przychodzące Wychodzące Nieodebrane</string>
     <string name="total">Wszystko</string>
@@ -159,4 +159,5 @@
     <string name="unblock_number_confirmation">Czy na pewno chcesz odblokować %s?</string>
     <string name="add_a_blocked_number">Dodaj zablokowany numer</string>
     <string name="show_audio_route_buttons">Wyświetlaj osobne przyciski głośnika i Bluetooth podczas połączeń</string>
+    <string name="show_frequent_contacts_shortcuts">Wyświetlaj najczęściej wybierane kontakty po długim naciśnięciu ikony aplikacji</string>
 </resources>
