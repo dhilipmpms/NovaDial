@@ -159,4 +159,5 @@
     <string name="unblock_number_confirmation">Вы уверены, что хотите разблокировать %s?</string>
     <string name="add_a_blocked_number">Добавить заблокированный номер</string>
     <string name="show_audio_route_buttons">Показывать отдельные кнопки динамика и Bluetooth во время звонков</string>
+    <string name="show_frequent_contacts_shortcuts">Показать наиболее часто вызываемые контакты при длительном нажатии на значок приложения</string>
 </resources>
