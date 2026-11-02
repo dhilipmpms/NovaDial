@@ -152,7 +152,7 @@ dependencies {
     implementation(libs.eventbus)
     implementation(libs.libphonenumber)
     implementation(libs.geocoder)
-    implementation("com.google.zxing:core:3.5.3")
+    implementation("com.google.zxing:core:3.5.4")
     detektPlugins(libs.compose.detekt)
 
     testImplementation(libs.junit)
