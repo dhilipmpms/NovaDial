@@ -189,4 +189,5 @@
     <string name="choose_from_gallery">Choose from gallery</string>
     <string name="remove_background">Remove background</string>
     <string name="custom_background_set">Custom background set</string>
+    <string name="default_contact_account">Default account for new contacts</string>
 </resources>

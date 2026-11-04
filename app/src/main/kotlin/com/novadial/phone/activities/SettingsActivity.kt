@@ -27,6 +27,7 @@ import com.novadial.phone.databinding.ActivitySettingsBinding
 import com.novadial.phone.dialogs.ExportCallHistoryDialog
 import com.novadial.phone.dialogs.ManageVisibleTabsDialog
 import com.novadial.phone.extensions.*
+import com.novadial.phone.helpers.AccountUtils
 import com.novadial.phone.helpers.FrequentContactsShortcutHelper
 import com.novadial.phone.helpers.ContactsCache
 import com.novadial.phone.helpers.RecentsHelper
@@ -116,6 +117,7 @@ class SettingsActivity : SimpleActivity() {
         setupStartNameWithSurname()
         setupCustomContactNameFormat()
         setupFormatPhoneNumbers()
+        setupDefaultContactAccount()
         setupVibrateOnConnect()
         setupVibrateOnDisconnect()
         setupAvatarShape()
@@ -602,6 +604,29 @@ class SettingsActivity : SimpleActivity() {
         binding.settingsFormatPhoneNumbersHolder.setOnClickListener {
             binding.settingsFormatPhoneNumbers.toggle()
             config.formatPhoneNumbers = binding.settingsFormatPhoneNumbers.isChecked
+        }
+    }
+
+    private fun setupDefaultContactAccount() {
+        // Label from the same lookup the contact editor uses, so a removed account shows as Device storage.
+        val currentAccounts = AccountUtils.getAvailableAccounts(this)
+        binding.settingsDefaultContactAccount.text = currentAccounts[
+            AccountUtils.indexOfAccount(currentAccounts, config.defaultContactAccountName, config.defaultContactAccountType)
+        ].label
+        binding.settingsDefaultContactAccountHolder.setOnClickListener {
+            val accounts = AccountUtils.getAvailableAccounts(this)
+            val items = ArrayList(accounts.mapIndexed { index, account -> RadioItem(index, account.label) })
+            val checkedIndex = AccountUtils.indexOfAccount(
+                accounts,
+                config.defaultContactAccountName,
+                config.defaultContactAccountType
+            )
+            RadioGroupDialog(this@SettingsActivity, items, checkedIndex) {
+                val selected = accounts[it as Int]
+                config.defaultContactAccountName = selected.name
+                config.defaultContactAccountType = selected.type
+                binding.settingsDefaultContactAccount.text = selected.label
+            }
         }
     }
 
