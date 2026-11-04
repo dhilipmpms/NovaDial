@@ -1084,7 +1084,7 @@ class ContactDetailsActivity : SimpleActivity() {
                                 .withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, newGivenName)
                                 .withValue(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, newMiddleName)
                                 .withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, newFamilyName)
-                                .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, "$newGivenName $newMiddleName $newFamilyName".trim())
+                                .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, listOf(newGivenName, newMiddleName, newFamilyName).filter { it.isNotBlank() }.joinToString(" "))
                             ops.add(builder.build())
                         }
                     }
@@ -1097,7 +1097,7 @@ class ContactDetailsActivity : SimpleActivity() {
                         .withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, newGivenName)
                         .withValue(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, newMiddleName)
                         .withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, newFamilyName)
-                        .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, "$newGivenName $newMiddleName $newFamilyName".trim())
+                        .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, listOf(newGivenName, newMiddleName, newFamilyName).filter { it.isNotBlank() }.joinToString(" "))
                     ops.add(builder.build())
                 }
 
