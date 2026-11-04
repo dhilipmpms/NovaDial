@@ -44,6 +44,18 @@ object AccountUtils {
         return result
     }
 
+    /** Index of the matching account, or 0 (device storage) if it is no longer on the device. */
+    fun indexOfAccount(accounts: List<ContactAccount>, name: String, type: String): Int {
+        val index = accounts.indexOfFirst { it.name == name && it.type == type }
+        return if (index >= 0) index else 0
+    }
+
+    /** Appends the given account if it is missing, so a contact's real account can always be shown. */
+    fun withAccount(accounts: List<ContactAccount>, name: String, type: String): List<ContactAccount> {
+        if (accounts.any { it.name == name && it.type == type }) return accounts
+        return accounts + ContactAccount(name, type, getFriendlyAccountLabel(name, type))
+    }
+
     fun getFriendlyAccountLabel(accountName: String?, accountType: String?): String {
         if (accountName.isNullOrEmpty() || accountType.isNullOrEmpty()) {
             return "Device storage (Local)"

@@ -28,6 +28,8 @@ const val DEFAULT_DIALER_PROMPT_DISMISSED = "default_dialer_prompt_dismissed"
 const val MAX_RINGTONE_VOLUME_INCOMING = "max_ringtone_volume_incoming"
 const val PREVIOUS_RINGTONE_VOLUME = "previous_ringtone_volume"
 const val IS_RINGTONE_VOLUME_BOOSTED = "is_ringtone_volume_boosted"
+const val DEFAULT_CONTACT_ACCOUNT_NAME = "default_contact_account_name"
+const val DEFAULT_CONTACT_ACCOUNT_TYPE = "default_contact_account_type"
 
 const val ALL_TABS_MASK = TAB_FAVORITES or TAB_CALL_HISTORY or TAB_CONTACTS
 
