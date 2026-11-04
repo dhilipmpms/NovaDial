@@ -33,6 +33,13 @@ class AccountUtilsTest {
     }
 
     @Test
+    fun `null and Samsung phone-local accounts are device storage`() {
+        assertEquals(true, AccountUtils.isDeviceStorage(""))
+        assertEquals(true, AccountUtils.isDeviceStorage("vnd.sec.contact.phone"))
+        assertEquals(false, AccountUtils.isDeviceStorage("com.google"))
+    }
+
+    @Test
     fun `withAccount leaves list unchanged when account is already listed`() {
         assertEquals(accounts, AccountUtils.withAccount(accounts, "a@example.com", "com.google"))
     }

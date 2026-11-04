@@ -44,6 +44,13 @@ object AccountUtils {
         return result
     }
 
+    // shortcut: only Samsung's phone-local type is listed, add other OEM types when seen on a device.
+    private val DEVICE_STORAGE_ACCOUNT_TYPES = setOf("vnd.sec.contact.phone")
+
+    /** True for raw contacts stored on the phone, whether the account is null or an OEM phone-local type. */
+    fun isDeviceStorage(accountType: String): Boolean =
+        accountType.isEmpty() || accountType in DEVICE_STORAGE_ACCOUNT_TYPES
+
     /** Index of the matching account, or 0 (device storage) if it is no longer on the device. */
     fun indexOfAccount(accounts: List<ContactAccount>, name: String, type: String): Int {
         val index = accounts.indexOfFirst { it.name == name && it.type == type }

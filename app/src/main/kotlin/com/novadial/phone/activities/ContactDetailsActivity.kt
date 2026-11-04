@@ -465,6 +465,10 @@ class ContactDetailsActivity : SimpleActivity() {
                         val accountTypeIdx = cursor.getColumnIndex(ContactsContract.RawContacts.ACCOUNT_TYPE)
                         rawContactAccountName = if (accountNameIdx >= 0) cursor.getString(accountNameIdx) ?: "" else ""
                         rawContactAccountType = if (accountTypeIdx >= 0) cursor.getString(accountTypeIdx) ?: "" else ""
+                        if (com.novadial.phone.helpers.AccountUtils.isDeviceStorage(rawContactAccountType)) {
+                            rawContactAccountName = ""
+                            rawContactAccountType = ""
+                        }
                     }
                 }
 

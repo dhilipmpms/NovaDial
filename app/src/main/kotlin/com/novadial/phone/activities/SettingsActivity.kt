@@ -608,10 +608,11 @@ class SettingsActivity : SimpleActivity() {
     }
 
     private fun setupDefaultContactAccount() {
-        binding.settingsDefaultContactAccount.text = AccountUtils.getFriendlyAccountLabel(
-            config.defaultContactAccountName,
-            config.defaultContactAccountType
-        )
+        // Label from the same lookup the contact editor uses, so a removed account shows as Device storage.
+        val currentAccounts = AccountUtils.getAvailableAccounts(this)
+        binding.settingsDefaultContactAccount.text = currentAccounts[
+            AccountUtils.indexOfAccount(currentAccounts, config.defaultContactAccountName, config.defaultContactAccountType)
+        ].label
         binding.settingsDefaultContactAccountHolder.setOnClickListener {
             val accounts = AccountUtils.getAvailableAccounts(this)
             val items = ArrayList(accounts.mapIndexed { index, account -> RadioItem(index, account.label) })
