@@ -1,5 +1,6 @@
 package com.novadial.phone.services
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -8,6 +9,7 @@ import android.app.Service
 import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.graphics.Canvas
@@ -27,6 +29,7 @@ import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.MotionEvent
 import android.view.View
+import android.view.WindowInsets
 import android.view.WindowManager
 import android.widget.ImageButton
 import android.widget.ImageView
@@ -61,6 +64,7 @@ class FloatingButtonService : Service() {
     private var initialY = 0
     private var initialTouchX = 0f
     private var initialTouchY = 0f
+    private var dockedLeft = true
 
     override fun onBind(intent: Intent?): IBinder? = null
 
@@ -168,6 +172,7 @@ class FloatingButtonService : Service() {
         }
     }
 
+    @SuppressLint("RtlHardcoded")
     private fun showFloatingViewIfNeeded() {
         if (isBubbleHiddenForCurrentCall() || CallManager.getPhoneState() == NoCall || CallManager.getRingingCall() != null || CallManager.getState() == Call.STATE_RINGING) {
             removeFloatingView()
@@ -185,8 +190,8 @@ class FloatingButtonService : Service() {
                 WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_NO_LIMITS,
                 PixelFormat.TRANSLUCENT
             ).apply {
-                gravity = Gravity.TOP or Gravity.START
-                x = dp(20)
+                gravity = Gravity.TOP or (if (dockedLeft) Gravity.LEFT else Gravity.RIGHT)
+                x = dp(8)
                 y = dp(120)
                 alpha = 0.65f
             }
@@ -207,7 +212,9 @@ class FloatingButtonService : Service() {
                     }
 
                     MotionEvent.ACTION_MOVE -> {
-                        params.x = initialX + (event.rawX - initialTouchX).toInt()
+                        // With RIGHT gravity, x grows leftward from the right edge.
+                        val dx = (event.rawX - initialTouchX).toInt()
+                        params.x = if (dockedLeft) initialX + dx else initialX - dx
                         params.y = initialY + (event.rawY - initialTouchY).toInt()
                         windowManager?.updateViewLayout(floatingView, params)
                         true
@@ -220,7 +227,7 @@ class FloatingButtonService : Service() {
                         if (dx < 10 && dy < 10) {
                             showPopupMenu(button)
                         } else {
-                            snapToEdge()
+                            snapToEdge(dockLeft = event.rawX < resources.displayMetrics.widthPixels / 2)
                         }
 
                         params.alpha = 0.65f
@@ -237,18 +244,17 @@ class FloatingButtonService : Service() {
             } catch (_: Exception) {
             }
 
-            floatingView?.post {
-                snapToEdge()
-                params.alpha = 0.65f
-                windowManager?.updateViewLayout(floatingView, params)
-            }
         }
     }
 
+    @SuppressLint("RtlHardcoded")
     private fun showPopupMenu(anchorView: View) {
         try {
             val wrapper = ContextThemeWrapper(this, R.style.AppTheme)
-            val popup = PopupMenu(wrapper, anchorView)
+            // On the right edge, open the menu leftward so its text is not cut off by the screen edge.
+            // LEFT/RIGHT, not START/END: the dock side is physical, but START/END flip in RTL locales.
+            val gravity = if (dockedLeft) Gravity.LEFT else Gravity.RIGHT
+            val popup = PopupMenu(wrapper, anchorView, gravity)
             popup.menu.add(0, 1, 0, R.string.open_call)
             popup.menu.add(0, 2, 1, R.string.hide)
             popup.setOnMenuItemClickListener { menuItem ->
@@ -433,22 +439,38 @@ class FloatingButtonService : Service() {
         }
     }
 
-    private fun snapToEdge() {
-        val screenWidth = resources.displayMetrics.widthPixels
-        val bubbleWidth = floatingView?.width ?: 0
-        val visiblePart = bubbleWidth / 2
-
-        params.x = if (params.x + bubbleWidth / 2 < screenWidth / 2) {
-            -visiblePart
-        } else {
-            screenWidth - visiblePart
-        }
+    // Dock 8dp from the left or right edge of the area apps may draw in. Android measures that area
+    // without the camera cutout and navigation bar, so the whole button stays visible in every rotation.
+    @SuppressLint("RtlHardcoded")
+    private fun snapToEdge(dockLeft: Boolean) {
+        dockedLeft = dockLeft
+        params.gravity = Gravity.TOP or (if (dockLeft) Gravity.LEFT else Gravity.RIGHT)
+        params.x = dp(8)
+        params.y = params.y.coerceIn(0, (drawableAreaHeight() - params.height).coerceAtLeast(0))
 
         windowManager?.updateViewLayout(floatingView, params)
     }
 
+    // y is measured from the top of the drawable area (below the status bar), so clamp to that area's height.
+    // Read from the current display, not the button's own layout, which still has the old size right after rotation.
+    private fun drawableAreaHeight(): Int {
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val metrics = windowManager?.currentWindowMetrics ?: return resources.displayMetrics.heightPixels
+            val bars = metrics.windowInsets.getInsetsIgnoringVisibility(WindowInsets.Type.systemBars() or WindowInsets.Type.displayCutout())
+            return metrics.bounds.height() - bars.top - bars.bottom
+        }
+        return resources.displayMetrics.heightPixels
+    }
+
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+        // Re-dock so rotation cannot leave the button below the new screen bottom.
+        // The button may be removed before the posted snap runs; updating a removed view throws.
+        floatingView?.post { if (floatingView?.isAttachedToWindow == true) snapToEdge(dockedLeft) }
+    }
 
     override fun onDestroy() {
         CallManager.removeListener(callManagerListener)
