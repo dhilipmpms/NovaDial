@@ -83,6 +83,7 @@ class ContactDetailsActivity : SimpleActivity() {
 
     private var isNewContact = false
     private var autoEditPending = false
+    private var isContactLoaded = false
     private var isSavingContact = false
     private var prefillName = ""
     private var prefillPhone = ""
@@ -540,6 +541,7 @@ class ContactDetailsActivity : SimpleActivity() {
     }
 
     private fun bindUI() {
+        isContactLoaded = true
         binding.progressIndicator.beGone()
         invalidateOptionsMenu()
 
@@ -798,6 +800,12 @@ class ContactDetailsActivity : SimpleActivity() {
     }
 
     private fun showEditContactDialog() {
+        if (contactId != -1L && !isContactLoaded) {
+            // Editing before the contact loads shows empty fields, and saving them wipes its name and numbers.
+            // bindUI() opens the editor once loading finishes.
+            autoEditPending = true
+            return
+        }
         handlePermission(PERMISSION_WRITE_CONTACTS) { hasPerm ->
             if (!hasPerm) {
                 toast(R.string.no_contacts_permission)
