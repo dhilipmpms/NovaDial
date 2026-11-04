@@ -1,5 +1,6 @@
 package com.novadial.phone.services
 
+import android.annotation.SuppressLint
 import android.app.Notification
 import android.app.NotificationChannel
 import android.app.NotificationManager
@@ -245,10 +246,14 @@ class FloatingButtonService : Service() {
         }
     }
 
+    @SuppressLint("RtlHardcoded")
     private fun showPopupMenu(anchorView: View) {
         try {
             val wrapper = ContextThemeWrapper(this, R.style.AppTheme)
-            val popup = PopupMenu(wrapper, anchorView)
+            // On the right edge, open the menu leftward so its text is not cut off by the screen edge.
+            // LEFT/RIGHT, not START/END: the dock side is physical, but START/END flip in RTL locales.
+            val gravity = if (isDockedLeft(resources.displayMetrics.widthPixels, anchorView.width)) Gravity.LEFT else Gravity.RIGHT
+            val popup = PopupMenu(wrapper, anchorView, gravity)
             popup.menu.add(0, 1, 0, R.string.open_call)
             popup.menu.add(0, 2, 1, R.string.hide)
             popup.setOnMenuItemClickListener { menuItem ->
@@ -436,16 +441,18 @@ class FloatingButtonService : Service() {
     private fun snapToEdge() {
         val screenWidth = resources.displayMetrics.widthPixels
         val bubbleWidth = floatingView?.width ?: 0
-        val visiblePart = bubbleWidth / 2
 
-        params.x = if (params.x + bubbleWidth / 2 < screenWidth / 2) {
-            -visiblePart
+        // Keep the whole button on screen so it stays a full-size tap target and its menu fits.
+        params.x = if (isDockedLeft(screenWidth, bubbleWidth)) {
+            dp(8)
         } else {
-            screenWidth - visiblePart
+            screenWidth - bubbleWidth - dp(8)
         }
 
         windowManager?.updateViewLayout(floatingView, params)
     }
+
+    private fun isDockedLeft(screenWidth: Int, bubbleWidth: Int) = params.x + bubbleWidth / 2 < screenWidth / 2
 
     private fun dp(value: Int): Int =
         (value * resources.displayMetrics.density).toInt()
