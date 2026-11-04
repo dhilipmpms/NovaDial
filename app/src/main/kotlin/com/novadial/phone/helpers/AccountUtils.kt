@@ -23,7 +23,8 @@ object AccountUtils {
             val allAccounts = AccountManager.get(context).accounts.toList()
             val syncAdapters = ContentResolver.getSyncAdapterTypes()
             val contactAccountTypes = syncAdapters
-                .filter { it.authority == ContactsContract.AUTHORITY }
+                // Skip read-only adapters (Meet, WhatsApp, Outlook): they do not upload contacts saved to them.
+                .filter { it.authority == ContactsContract.AUTHORITY && it.supportsUploading() }
                 .map { it.accountType }
                 .toSet()
 
