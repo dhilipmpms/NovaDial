@@ -43,6 +43,8 @@ import com.novadial.phone.models.AudioRoute
 import kotlin.math.abs
 import kotlin.math.min
 
+// The button docks to a physical screen edge, so LEFT/RIGHT gravity is intended in every locale.
+@SuppressLint("RtlHardcoded")
 class FloatingButtonService : Service() {
 
     companion object {
@@ -172,7 +174,6 @@ class FloatingButtonService : Service() {
         }
     }
 
-    @SuppressLint("RtlHardcoded")
     private fun showFloatingViewIfNeeded() {
         if (isBubbleHiddenForCurrentCall() || CallManager.getPhoneState() == NoCall || CallManager.getRingingCall() != null || CallManager.getState() == Call.STATE_RINGING) {
             removeFloatingView()
@@ -247,7 +248,6 @@ class FloatingButtonService : Service() {
         }
     }
 
-    @SuppressLint("RtlHardcoded")
     private fun showPopupMenu(anchorView: View) {
         try {
             val wrapper = ContextThemeWrapper(this, R.style.AppTheme)
@@ -441,7 +441,6 @@ class FloatingButtonService : Service() {
 
     // Dock 8dp from the left or right edge of the area apps may draw in. Android measures that area
     // without the camera cutout and navigation bar, so the whole button stays visible in every rotation.
-    @SuppressLint("RtlHardcoded")
     private fun snapToEdge(dockLeft: Boolean) {
         dockedLeft = dockLeft
         params.gravity = Gravity.TOP or (if (dockLeft) Gravity.LEFT else Gravity.RIGHT)
