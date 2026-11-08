@@ -1,5 +1,6 @@
 package com.novadial.phone.activities
 
+import android.widget.Toast
 import android.graphics.Color
 import androidx.core.content.ContextCompat
 import android.content.Intent
@@ -608,26 +609,36 @@ class SettingsActivity : SimpleActivity() {
     }
 
     private fun setupDefaultContactAccount() {
-        // Label from the same lookup the contact editor uses, so a removed account shows as Device storage.
+        // Label from the same lookup the contact editor uses, so the row shows the account new contacts start on.
         val currentAccounts = AccountUtils.getAvailableAccounts(this)
-        binding.settingsDefaultContactAccount.text = currentAccounts[
-            AccountUtils.indexOfAccount(currentAccounts, config.defaultContactAccountName, config.defaultContactAccountType)
-        ].label
+        binding.settingsDefaultContactAccount.text = currentAccounts[defaultContactAccountIndex(currentAccounts)].label
         binding.settingsDefaultContactAccountHolder.setOnClickListener {
             val accounts = AccountUtils.getAvailableAccounts(this)
             val items = ArrayList(accounts.mapIndexed { index, account -> RadioItem(index, account.label) })
-            val checkedIndex = AccountUtils.indexOfAccount(
-                accounts,
-                config.defaultContactAccountName,
-                config.defaultContactAccountType
-            )
-            RadioGroupDialog(this@SettingsActivity, items, checkedIndex) {
+            RadioGroupDialog(this@SettingsActivity, items, defaultContactAccountIndex(accounts)) {
                 val selected = accounts[it as Int]
                 config.defaultContactAccountName = selected.name
                 config.defaultContactAccountType = selected.type
                 binding.settingsDefaultContactAccount.text = selected.label
+                if (AccountUtils.isLocalOrSim(selected)) {
+                    AccountUtils.getSystemCloudDefaultAccount(this)?.let { cloud ->
+                        toast(getString(R.string.local_save_blocked_by_cloud_default, cloud.name), Toast.LENGTH_LONG)
+                    }
+                }
             }
         }
+    }
+
+    private fun defaultContactAccountIndex(accounts: List<AccountUtils.ContactAccount>): Int {
+        val cloudDefault = AccountUtils.getSystemCloudDefaultAccount(this)
+        return AccountUtils.indexForNewContact(
+            accounts,
+            config.defaultContactAccountName,
+            config.defaultContactAccountType,
+            config.hasDefaultContactAccount,
+            cloudDefault?.name,
+            cloudDefault?.type
+        )
     }
 
     private fun setupDialpadVibrations() {

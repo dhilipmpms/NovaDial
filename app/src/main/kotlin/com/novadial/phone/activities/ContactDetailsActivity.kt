@@ -880,11 +880,23 @@ class ContactDetailsActivity : SimpleActivity() {
                 availableAccounts.map { it.label }
             )
             dialogBinding.editAccountSpinner.adapter = accountAdapter
-            val initialAccountIndex = com.novadial.phone.helpers.AccountUtils.indexOfAccount(
-                availableAccounts,
-                initialAccountName,
-                initialAccountType
-            )
+            val initialAccountIndex = if (contactId == -1L) {
+                val systemCloudDefault = com.novadial.phone.helpers.AccountUtils.getSystemCloudDefaultAccount(this)
+                com.novadial.phone.helpers.AccountUtils.indexForNewContact(
+                    availableAccounts,
+                    initialAccountName,
+                    initialAccountType,
+                    config.hasDefaultContactAccount,
+                    systemCloudDefault?.name,
+                    systemCloudDefault?.type
+                )
+            } else {
+                com.novadial.phone.helpers.AccountUtils.indexOfAccount(
+                    availableAccounts,
+                    initialAccountName,
+                    initialAccountType
+                )
+            }
             dialogBinding.editAccountSpinner.setSelection(initialAccountIndex)
 
             // Pre-fill Photo
@@ -1005,6 +1017,19 @@ class ContactDetailsActivity : SimpleActivity() {
                     availableAccounts[selectedAccountIndex]
                 } else null
 
+                // Android 16+ refuses device/SIM saves while the system default account is cloud.
+                // Explain and offer the system setting instead of failing with a provider error.
+                val cloudDefault = com.novadial.phone.helpers.AccountUtils.getSystemCloudDefaultAccount(this)
+                if (selectedAccount != null && cloudDefault != null &&
+                    com.novadial.phone.helpers.AccountUtils.isLocalOrSim(selectedAccount)
+                ) {
+                    isSavingContact = false
+                    dialogBinding.saveContactButton.isEnabled = true
+                    dialogBinding.cancelEditButton.isEnabled = true
+                    showLocalSaveBlockedDialog(cloudDefault.name)
+                    return@setOnClickListener
+                }
+
                 val accountName = selectedAccount?.name?.ifEmpty { null }
                 val accountType = selectedAccount?.type?.ifEmpty { null }
 
@@ -1031,6 +1056,21 @@ class ContactDetailsActivity : SimpleActivity() {
                 setupDialogStuff(dialogBinding.root, this) { alertDialog ->
                     editDialog = alertDialog
                 }
+            }
+        }
+    }
+
+    private fun showLocalSaveBlockedDialog(cloudAccountName: String) {
+        ConfirmationDialog(
+            activity = this,
+            message = getString(R.string.local_save_blocked_by_cloud_default, cloudAccountName),
+            positive = R.string.change_default_account,
+            negative = org.fossify.commons.R.string.cancel
+        ) {
+            try {
+                startActivity(Intent(ContactsContract.Settings.ACTION_SET_DEFAULT_ACCOUNT))
+            } catch (e: Exception) {
+                toast(R.string.default_account_settings_unavailable)
             }
         }
     }

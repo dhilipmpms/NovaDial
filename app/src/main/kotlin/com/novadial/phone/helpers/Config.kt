@@ -224,6 +224,11 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getString(DEFAULT_CONTACT_ACCOUNT_TYPE, "") ?: ""
         set(value) = prefs.edit().putString(DEFAULT_CONTACT_ACCOUNT_TYPE, value).apply()
 
+    // False until the user picks an account in Settings; the empty default alone cannot tell
+    // "chose device storage" apart from "never chose".
+    val hasDefaultContactAccount: Boolean
+        get() = prefs.contains(DEFAULT_CONTACT_ACCOUNT_TYPE)
+
     fun getContactCustomBackground(contactId: Long): String? {
         return prefs.getString("contact_custom_bg_$contactId", null)
     }

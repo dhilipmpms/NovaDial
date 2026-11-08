@@ -40,18 +40,26 @@ class AccountUtilsTest {
     }
 
     @Test
-    fun `cloud system default drops device storage and SIM and is listed first`() {
-        val withSim = accounts + ContactAccount("SIM1", "com.android.sim", "SIM Card (SIM1)")
-        val result = AccountUtils.restrictToCloudDefault(withSim, "b@example.com", "com.google")
-        assertEquals(listOf("b@example.com", "a@example.com"), result.map { it.name })
-        assertEquals(0, AccountUtils.indexOfAccount(result, "", ""))
+    fun `new contact follows cloud system default when user never chose an account`() {
+        assertEquals(2, AccountUtils.indexForNewContact(accounts, "", "", false, "b@example.com", "com.google"))
     }
 
     @Test
-    fun `cloud system default is added when it is not otherwise listed`() {
-        val result = AccountUtils.restrictToCloudDefault(accounts, "c@example.com", "com.google")
-        assertEquals("Google (c@example.com)", result[0].label)
-        assertEquals(3, result.size)
+    fun `new contact keeps device storage the user chose even with a cloud system default`() {
+        assertEquals(0, AccountUtils.indexForNewContact(accounts, "", "", true, "b@example.com", "com.google"))
+    }
+
+    @Test
+    fun `new contact uses saved choice when there is no cloud system default`() {
+        assertEquals(1, AccountUtils.indexForNewContact(accounts, "a@example.com", "com.google", false, null, null))
+        assertEquals(0, AccountUtils.indexForNewContact(accounts, "", "", false, null, null))
+    }
+
+    @Test
+    fun `device storage and SIM are the accounts a cloud default blocks`() {
+        assertEquals(true, AccountUtils.isLocalOrSim(accounts[0]))
+        assertEquals(true, AccountUtils.isLocalOrSim(ContactAccount("SIM1", "com.android.sim", "SIM Card (SIM1)")))
+        assertEquals(false, AccountUtils.isLocalOrSim(accounts[1]))
     }
 
     @Test
