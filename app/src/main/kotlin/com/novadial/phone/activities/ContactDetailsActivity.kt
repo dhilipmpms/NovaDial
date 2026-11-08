@@ -427,6 +427,8 @@ class ContactDetailsActivity : SimpleActivity() {
         // assign them on the UI thread if two loads starting close together ever shows up.
         isContactLoaded = false
         val generation = ++loadGeneration
+        // A contact being created has no row yet; querying contacts/-1 fails and showed "Failed to load contact".
+        if (contactId == -1L) return
         ensureBackgroundThread {
             try {
                 // 1. Contact main record
