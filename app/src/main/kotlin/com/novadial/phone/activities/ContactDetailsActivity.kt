@@ -86,6 +86,8 @@ class ContactDetailsActivity : SimpleActivity() {
 
     private var isNewContact = false
     private var autoEditPending = false
+    private var isContactLoaded = false
+    private var loadGeneration = 0
     private var isSavingContact = false
     private var prefillName = ""
     private var prefillPhone = ""
@@ -264,7 +266,7 @@ class ContactDetailsActivity : SimpleActivity() {
         binding.videoCallActionIcon.backgroundTintList = ColorStateList.valueOf(cardBgColor)
         binding.videoCallActionIcon.applyColorFilter(headerTextColor)
 
-        loadContactData()
+        // onResume() loads the contact; loading here too ran two loaders at once that overwrite the same fields.
         if (isNewContact || autoEditPending || contactId == -1L) {
             autoEditPending = false
             showEditContactDialog()
@@ -420,6 +422,11 @@ class ContactDetailsActivity : SimpleActivity() {
     }
 
     private fun loadContactData() {
+        // The loader rewrites the fields the editor reads, so the editor waits for this load to finish.
+        // shortcut: an older load can still be writing fields while a newer one runs; load into locals and
+        // assign them on the UI thread if two loads starting close together ever shows up.
+        isContactLoaded = false
+        val generation = ++loadGeneration
         ensureBackgroundThread {
             try {
                 // 1. Contact main record
@@ -546,17 +553,20 @@ class ContactDetailsActivity : SimpleActivity() {
                 }
 
                 runOnUiThread {
-                    bindUI()
+                    // An older load finishing after a newer one started must not unlock the editor.
+                    if (generation == loadGeneration) bindUI()
                 }
             } catch (e: Exception) {
                 runOnUiThread {
                     binding.progressIndicator.beGone()
+                    if (generation == loadGeneration) toast("Failed to load contact")
                 }
             }
         }
     }
 
     private fun bindUI() {
+        isContactLoaded = true
         binding.progressIndicator.beGone()
         invalidateOptionsMenu()
 
@@ -815,6 +825,12 @@ class ContactDetailsActivity : SimpleActivity() {
     }
 
     private fun showEditContactDialog() {
+        if (contactId != -1L && !isContactLoaded) {
+            // Editing before the contact loads shows empty fields, and saving them wipes its name and numbers.
+            // bindUI() opens the editor once loading finishes.
+            autoEditPending = true
+            return
+        }
         handlePermission(PERMISSION_WRITE_CONTACTS) { hasPerm ->
             if (!hasPerm) {
                 toast(R.string.no_contacts_permission)
@@ -1148,7 +1164,7 @@ class ContactDetailsActivity : SimpleActivity() {
                                 .withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, newGivenName)
                                 .withValue(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, newMiddleName)
                                 .withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, newFamilyName)
-                                .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, "$newGivenName $newMiddleName $newFamilyName".trim())
+                                .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, listOf(newGivenName, newMiddleName, newFamilyName).filter { it.isNotBlank() }.joinToString(" "))
                             ops.add(builder.build())
                         }
                     }
@@ -1161,7 +1177,7 @@ class ContactDetailsActivity : SimpleActivity() {
                         .withValue(ContactsContract.CommonDataKinds.StructuredName.GIVEN_NAME, newGivenName)
                         .withValue(ContactsContract.CommonDataKinds.StructuredName.MIDDLE_NAME, newMiddleName)
                         .withValue(ContactsContract.CommonDataKinds.StructuredName.FAMILY_NAME, newFamilyName)
-                        .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, "$newGivenName $newMiddleName $newFamilyName".trim())
+                        .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, listOf(newGivenName, newMiddleName, newFamilyName).filter { it.isNotBlank() }.joinToString(" "))
                     ops.add(builder.build())
                 }
 
