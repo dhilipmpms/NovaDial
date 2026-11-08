@@ -189,4 +189,8 @@
     <string name="choose_from_gallery">Choose from gallery</string>
     <string name="remove_background">Remove background</string>
     <string name="custom_background_set">Custom background set</string>
+    <string name="default_contact_account">Default account for new contacts</string>
+    <string name="local_save_blocked_by_cloud_default">Your phone\'s default account for new contacts is set to %s. Android only lets apps save contacts to device storage or SIM after you change that default to Device.</string>
+    <string name="change_default_account">Change default</string>
+    <string name="default_account_settings_unavailable">Open your phone\'s Contacts settings to change the default account</string>
 </resources>

@@ -215,6 +215,20 @@ class Config(context: Context) : BaseConfig(context) {
         get() = prefs.getBoolean("show_pictures", true)
         set(value) = prefs.edit().putBoolean("show_pictures", value).apply()
 
+    // Empty name and type mean device-local storage.
+    var defaultContactAccountName: String
+        get() = prefs.getString(DEFAULT_CONTACT_ACCOUNT_NAME, "") ?: ""
+        set(value) = prefs.edit().putString(DEFAULT_CONTACT_ACCOUNT_NAME, value).apply()
+
+    var defaultContactAccountType: String
+        get() = prefs.getString(DEFAULT_CONTACT_ACCOUNT_TYPE, "") ?: ""
+        set(value) = prefs.edit().putString(DEFAULT_CONTACT_ACCOUNT_TYPE, value).apply()
+
+    // False until the user picks an account in Settings; the empty default alone cannot tell
+    // "chose device storage" apart from "never chose".
+    val hasDefaultContactAccount: Boolean
+        get() = prefs.contains(DEFAULT_CONTACT_ACCOUNT_TYPE)
+
     fun getContactCustomBackground(contactId: Long): String? {
         return prefs.getString("contact_custom_bg_$contactId", null)
     }

@@ -72,6 +72,9 @@ class ContactDetailsActivity : SimpleActivity() {
     private val binding by viewBinding(ActivityContactDetailsBinding::inflate)
     private var contactId: Long = -1L
     private var rawContactId: Long = -1L
+    // Account of the raw contact that edits are written to; empty means device storage.
+    private var rawContactAccountName: String = ""
+    private var rawContactAccountType: String = ""
     private var contactName: String = ""
     private var isFavorite = false
     private var selectedPhotoUri: Uri? = null
@@ -442,15 +445,29 @@ class ContactDetailsActivity : SimpleActivity() {
 
                 // 2. Raw Contact ID lookup
                 rawContactId = -1L
+                rawContactAccountName = ""
+                rawContactAccountType = ""
                 val rawUri = ContactsContract.RawContacts.CONTENT_URI
-                val rawProjection = arrayOf(ContactsContract.RawContacts._ID)
+                val rawProjection = arrayOf(
+                    ContactsContract.RawContacts._ID,
+                    ContactsContract.RawContacts.ACCOUNT_NAME,
+                    ContactsContract.RawContacts.ACCOUNT_TYPE
+                )
                 val rawSelection = "${ContactsContract.RawContacts.CONTACT_ID} = ?"
                 val rawArgs = arrayOf(contactId.toString())
-                contentResolver.query(rawUri, rawProjection, rawSelection, rawArgs, null)?.use { cursor ->
+                contentResolver.query(rawUri, rawProjection, rawSelection, rawArgs, RAW_CONTACTS_ORDER)?.use { cursor ->
                     if (cursor.moveToFirst()) {
                         val rawIdIdx = cursor.getColumnIndex(ContactsContract.RawContacts._ID)
                         if (rawIdIdx >= 0) {
                             rawContactId = cursor.getLong(rawIdIdx)
+                        }
+                        val accountNameIdx = cursor.getColumnIndex(ContactsContract.RawContacts.ACCOUNT_NAME)
+                        val accountTypeIdx = cursor.getColumnIndex(ContactsContract.RawContacts.ACCOUNT_TYPE)
+                        rawContactAccountName = if (accountNameIdx >= 0) cursor.getString(accountNameIdx) ?: "" else ""
+                        rawContactAccountType = if (accountTypeIdx >= 0) cursor.getString(accountTypeIdx) ?: "" else ""
+                        if (com.novadial.phone.helpers.AccountUtils.isDeviceStorage(rawContactAccountType)) {
+                            rawContactAccountName = ""
+                            rawContactAccountType = ""
                         }
                     }
                 }
@@ -850,13 +867,37 @@ class ContactDetailsActivity : SimpleActivity() {
             dialogBinding.editSurname.setText(surname)
 
             // Setup Account Selection Spinner
-            val availableAccounts = com.novadial.phone.helpers.AccountUtils.getAvailableAccounts(this)
+            // New contacts start on the default account from settings. Existing contacts show
+            // the account their edits are written to, even if it is not a selectable account.
+            val initialAccountName = if (contactId == -1L) config.defaultContactAccountName else rawContactAccountName
+            val initialAccountType = if (contactId == -1L) config.defaultContactAccountType else rawContactAccountType
+            val availableAccounts = com.novadial.phone.helpers.AccountUtils.getAvailableAccounts(this).let {
+                if (contactId == -1L) it else com.novadial.phone.helpers.AccountUtils.withAccount(it, initialAccountName, initialAccountType)
+            }
             val accountAdapter = ArrayAdapter(
                 this,
                 android.R.layout.simple_spinner_dropdown_item,
                 availableAccounts.map { it.label }
             )
             dialogBinding.editAccountSpinner.adapter = accountAdapter
+            val initialAccountIndex = if (contactId == -1L) {
+                val systemCloudDefault = com.novadial.phone.helpers.AccountUtils.getSystemCloudDefaultAccount(this)
+                com.novadial.phone.helpers.AccountUtils.indexForNewContact(
+                    availableAccounts,
+                    initialAccountName,
+                    initialAccountType,
+                    config.hasDefaultContactAccount,
+                    systemCloudDefault?.name,
+                    systemCloudDefault?.type
+                )
+            } else {
+                com.novadial.phone.helpers.AccountUtils.indexOfAccount(
+                    availableAccounts,
+                    initialAccountName,
+                    initialAccountType
+                )
+            }
+            dialogBinding.editAccountSpinner.setSelection(initialAccountIndex)
 
             // Pre-fill Photo
             SimpleContactsHelper(this).loadContactImage(currentPhotoUriString, dialogBinding.editContactPhoto, contactName)
@@ -969,9 +1010,25 @@ class ContactDetailsActivity : SimpleActivity() {
                 val newSurname = dialogBinding.editSurname.text.toString().trim()
 
                 val selectedAccountIndex = dialogBinding.editAccountSpinner.selectedItemPosition
-                val selectedAccount = if (selectedAccountIndex >= 0 && selectedAccountIndex < availableAccounts.size) {
+                // For an existing contact, only send an account when the user picked a different one,
+                // so saving other edits does not rewrite the account on every linked raw contact.
+                val accountChanged = contactId == -1L || selectedAccountIndex != initialAccountIndex
+                val selectedAccount = if (accountChanged && selectedAccountIndex >= 0 && selectedAccountIndex < availableAccounts.size) {
                     availableAccounts[selectedAccountIndex]
                 } else null
+
+                // Android 16+ refuses device/SIM saves while the system default account is cloud.
+                // Explain and offer the system setting instead of failing with a provider error.
+                val cloudDefault = com.novadial.phone.helpers.AccountUtils.getSystemCloudDefaultAccount(this)
+                if (selectedAccount != null && cloudDefault != null &&
+                    com.novadial.phone.helpers.AccountUtils.isLocalOrSim(selectedAccount)
+                ) {
+                    isSavingContact = false
+                    dialogBinding.saveContactButton.isEnabled = true
+                    dialogBinding.cancelEditButton.isEnabled = true
+                    showLocalSaveBlockedDialog(cloudDefault.name)
+                    return@setOnClickListener
+                }
 
                 val accountName = selectedAccount?.name?.ifEmpty { null }
                 val accountType = selectedAccount?.type?.ifEmpty { null }
@@ -1003,6 +1060,21 @@ class ContactDetailsActivity : SimpleActivity() {
         }
     }
 
+    private fun showLocalSaveBlockedDialog(cloudAccountName: String) {
+        ConfirmationDialog(
+            activity = this,
+            message = getString(R.string.local_save_blocked_by_cloud_default, cloudAccountName),
+            positive = R.string.change_default_account,
+            negative = org.fossify.commons.R.string.cancel
+        ) {
+            try {
+                startActivity(Intent(ContactsContract.Settings.ACTION_SET_DEFAULT_ACCOUNT))
+            } catch (e: Exception) {
+                toast(R.string.default_account_settings_unavailable)
+            }
+        }
+    }
+
     private fun saveContactEdits(
         newGivenName: String,
         newMiddleName: String,
@@ -1029,7 +1101,7 @@ class ContactDetailsActivity : SimpleActivity() {
                 val rawProjection = arrayOf(ContactsContract.RawContacts._ID)
                 val rawSelection = "${ContactsContract.RawContacts.CONTACT_ID} = ?"
                 val rawArgs = arrayOf(contactId.toString())
-                contentResolver.query(rawUri, rawProjection, rawSelection, rawArgs, null)?.use { cursor ->
+                contentResolver.query(rawUri, rawProjection, rawSelection, rawArgs, RAW_CONTACTS_ORDER)?.use { cursor ->
                     val idIdx = cursor.getColumnIndex(ContactsContract.RawContacts._ID)
                     while (cursor.moveToNext()) {
                         if (idIdx >= 0) {
@@ -1494,7 +1566,7 @@ class ContactDetailsActivity : SimpleActivity() {
         val rawProjection = arrayOf(ContactsContract.RawContacts._ID)
         val rawSelection = "${ContactsContract.RawContacts.CONTACT_ID} = ?"
         val rawArgs = arrayOf(cId.toString())
-        return contentResolver.query(rawUri, rawProjection, rawSelection, rawArgs, null)?.use { cursor ->
+        return contentResolver.query(rawUri, rawProjection, rawSelection, rawArgs, RAW_CONTACTS_ORDER)?.use { cursor ->
             if (cursor.moveToFirst()) cursor.getLong(0) else -1L
         } ?: -1L
     }
@@ -1860,6 +1932,8 @@ class ContactDetailsActivity : SimpleActivity() {
     }
 
     companion object {
+        // Load and save must agree on which raw contact is "first" (the one edits are written to).
+        private const val RAW_CONTACTS_ORDER = "${ContactsContract.RawContacts._ID} ASC"
         const val EXTRA_CONTACT_ID = "contact_id"
         const val EXTRA_RAW_ID = "raw_id"
         const val EXTRA_LOOKUP_KEY = "lookup_key"

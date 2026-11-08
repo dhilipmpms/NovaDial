@@ -311,6 +311,29 @@
 
             </RelativeLayout>
 
+            <RelativeLayout
+                android:id="@+id/settings_default_contact_account_holder"
+                style="@style/SettingsHolderTextViewStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/settings_default_contact_account_label"
+                    style="@style/SettingsTextLabelStyle"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/default_contact_account" />
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/settings_default_contact_account"
+                    style="@style/SettingsTextValueStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/settings_default_contact_account_label"
+                    tools:text="Device storage (Local)" />
+
+            </RelativeLayout>
+
             <include
                 android:id="@+id/settings_general_settings_divider"
                 layout="@layout/divider" />
