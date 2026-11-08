@@ -4,6 +4,7 @@ import android.accounts.Account
 import android.accounts.AccountManager
 import android.content.ContentResolver
 import android.content.Context
+import android.os.Build
 import android.provider.ContactsContract
 
 object AccountUtils {
@@ -42,7 +43,34 @@ object AccountUtils {
             e.printStackTrace()
         }
 
-        return result
+        val cloudDefault = getSystemCloudDefaultAccount(context)
+        return if (cloudDefault != null) {
+            restrictToCloudDefault(result, cloudDefault.name, cloudDefault.type)
+        } else {
+            result
+        }
+    }
+
+    private fun getSystemCloudDefaultAccount(context: Context): Account? {
+        if (Build.VERSION.SDK_INT < Build.VERSION_CODES.BAKLAVA) return null
+        return try {
+            val state = ContactsContract.RawContacts.DefaultAccount.getDefaultAccountForNewContacts(context.contentResolver)
+            if (state.state == ContactsContract.RawContacts.DefaultAccount.DefaultAccountAndState.DEFAULT_ACCOUNT_STATE_CLOUD) {
+                state.account
+            } else {
+                null
+            }
+        } catch (e: Throwable) {
+            null
+        }
+    }
+
+   
+    fun restrictToCloudDefault(accounts: List<ContactAccount>, cloudName: String, cloudType: String): List<ContactAccount> {
+        val allowed = accounts.filterNot { isDeviceStorage(it.type) || it.type.contains("sim", ignoreCase = true) }
+        val cloud = allowed.firstOrNull { it.name == cloudName && it.type == cloudType }
+            ?: ContactAccount(cloudName, cloudType, getFriendlyAccountLabel(cloudName, cloudType))
+        return listOf(cloud) + allowed.filterNot { it.name == cloudName && it.type == cloudType }
     }
 
     // shortcut: only Samsung's phone-local type is listed, add other OEM types when seen on a device.
@@ -52,7 +80,7 @@ object AccountUtils {
     fun isDeviceStorage(accountType: String): Boolean =
         accountType.isEmpty() || accountType in DEVICE_STORAGE_ACCOUNT_TYPES
 
-    /** Index of the matching account, or 0 (device storage) if it is no longer on the device. */
+    /** Index of the matching account, or 0 (device storage, or the system cloud default) if it is not selectable. */
     fun indexOfAccount(accounts: List<ContactAccount>, name: String, type: String): Int {
         val index = accounts.indexOfFirst { it.name == name && it.type == type }
         return if (index >= 0) index else 0

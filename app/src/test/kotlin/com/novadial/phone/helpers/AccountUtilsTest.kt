@@ -40,6 +40,21 @@ class AccountUtilsTest {
     }
 
     @Test
+    fun `cloud system default drops device storage and SIM and is listed first`() {
+        val withSim = accounts + ContactAccount("SIM1", "com.android.sim", "SIM Card (SIM1)")
+        val result = AccountUtils.restrictToCloudDefault(withSim, "b@example.com", "com.google")
+        assertEquals(listOf("b@example.com", "a@example.com"), result.map { it.name })
+        assertEquals(0, AccountUtils.indexOfAccount(result, "", ""))
+    }
+
+    @Test
+    fun `cloud system default is added when it is not otherwise listed`() {
+        val result = AccountUtils.restrictToCloudDefault(accounts, "c@example.com", "com.google")
+        assertEquals("Google (c@example.com)", result[0].label)
+        assertEquals(3, result.size)
+    }
+
+    @Test
     fun `withAccount leaves list unchanged when account is already listed`() {
         assertEquals(accounts, AccountUtils.withAccount(accounts, "a@example.com", "com.google"))
     }
