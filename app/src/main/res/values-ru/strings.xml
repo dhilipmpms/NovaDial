@@ -160,4 +160,8 @@
     <string name="add_a_blocked_number">Добавить заблокированный номер</string>
     <string name="show_audio_route_buttons">Показывать отдельные кнопки динамика и Bluetooth во время звонков</string>
     <string name="show_frequent_contacts_shortcuts">Показать наиболее часто вызываемые контакты при длительном нажатии на значок приложения</string>
+    <string name="default_account_settings_unavailable">Откройте настройки Контактов на телефоне, чтобы изменить учетную запись по умолчанию</string>
+    <string name="default_contact_account">Учетная запись по умолчанию для новых контактов</string>
+    <string name="local_save_blocked_by_cloud_default">Учетная запись вашего телефона, используемая по умолчанию для новых контактов, установлена на %s. Android позволяет приложениям сохранять контакты в памяти устройства или на SIM-карте только после того, как вы измените это значение по умолчанию на «Устройство».</string>
+    <string name="change_default_account">Изменить значение по умолчанию</string>
 </resources>
