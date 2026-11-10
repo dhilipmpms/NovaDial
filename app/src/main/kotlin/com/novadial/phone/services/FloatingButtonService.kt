@@ -174,6 +174,8 @@ class FloatingButtonService : Service() {
         }
     }
 
+    // ImageButton already implements performClick(); the touch listener calls it on tap.
+    @SuppressLint("ClickableViewAccessibility")
     private fun showFloatingViewIfNeeded() {
         if (isBubbleHiddenForCurrentCall() || CallManager.getPhoneState() == NoCall || CallManager.getRingingCall() != null || CallManager.getState() == Call.STATE_RINGING) {
             removeFloatingView()
@@ -200,7 +202,9 @@ class FloatingButtonService : Service() {
             val button = floatingView!!.findViewById<ImageButton>(R.id.floating_button)
             setDefaultIcon()
 
-            button.setOnTouchListener { _, event ->
+            // The menu lives in the click listener so TalkBack and Switch Access can open it too.
+            button.setOnClickListener { showPopupMenu(button) }
+            button.setOnTouchListener { view, event ->
                 when (event.actionMasked) {
                     MotionEvent.ACTION_DOWN -> {
                         initialX = params.x
@@ -226,7 +230,7 @@ class FloatingButtonService : Service() {
                         val dy = abs(event.rawY - initialTouchY)
 
                         if (dx < 10 && dy < 10) {
-                            showPopupMenu(button)
+                            view.performClick()
                         } else {
                             snapToEdge(dockLeft = event.rawX < resources.displayMetrics.widthPixels / 2)
                         }
