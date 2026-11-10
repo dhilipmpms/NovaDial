@@ -157,6 +157,8 @@ class CallActivity : SimpleActivity() {
             return
         }
         updateState()
+        // "Hide" lasts until the user comes back to the call screen; leaving it again shows the button.
+        FloatingButtonService.resetHiddenState()
         stopFloatingButton()
     }
 
