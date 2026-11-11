@@ -20,43 +20,55 @@
 
     </org.fossify.commons.views.MyAppBarLayout>
 
-    <androidx.core.widget.NestedScrollView
-        android:id="@+id/recordings_scrollview"
+    <FrameLayout
+        android:id="@+id/recordings_holder"
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:fillViewport="true"
-        android:scrollbars="none"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
+        <org.fossify.commons.views.MyRecyclerView
+            android:id="@+id/recordings_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingVertical="@dimen/small_margin"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager" />
+
         <LinearLayout
-            android:id="@+id/recordings_holder"
+            android:id="@+id/recordings_empty"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:layout_gravity="center"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:padding="@dimen/big_margin"
+            android:visibility="gone">
+
+            <ImageView
+                android:id="@+id/recordings_empty_icon"
+                android:layout_width="64dp"
+                android:layout_height="64dp"
+                android:alpha="0.5"
+                android:contentDescription="@null"
+                android:src="@drawable/ic_microphone_vector" />
 
             <org.fossify.commons.views.MyTextView
-                android:id="@+id/recordings_summary"
-                android:layout_width="match_parent"
+                android:id="@+id/recordings_empty_title"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:padding="@dimen/activity_margin"
-                android:text="@string/call_recordings_summary" />
-
-            <org.fossify.commons.views.MyTextView
-                android:id="@+id/recordings_empty"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:gravity="center"
-                android:padding="@dimen/big_margin"
+                android:layout_marginTop="@dimen/activity_margin"
                 android:text="@string/no_call_recordings"
-                android:textSize="@dimen/bigger_text_size"
-                android:visibility="gone" />
+                android:textSize="@dimen/big_text_size" />
 
-            <LinearLayout
-                android:id="@+id/recordings_list"
-                android:layout_width="match_parent"
+            <org.fossify.commons.views.MyTextView
+                android:id="@+id/recordings_empty_subtitle"
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:orientation="vertical" />
-
+                android:layout_marginTop="@dimen/small_margin"
+                android:alpha="0.7"
+                android:gravity="center"
+                android:text="@string/no_call_recordings_subtitle"
+                android:textSize="@dimen/normal_text_size" />
         </LinearLayout>
-    </androidx.core.widget.NestedScrollView>
+    </FrameLayout>
 </androidx.coordinatorlayout.widget.CoordinatorLayout>

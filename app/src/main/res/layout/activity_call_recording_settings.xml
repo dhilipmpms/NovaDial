@@ -15,6 +15,7 @@
             android:layout_width="match_parent"
             android:layout_height="?attr/actionBarSize"
             android:background="@color/color_primary"
+            app:subtitle="@string/call_recording_setup_summary"
             app:title="@string/call_recording_setup"
             app:titleTextAppearance="@style/AppTheme.ActionBar.TitleTextStyle" />
 
@@ -32,27 +33,40 @@
             android:id="@+id/recording_settings_holder"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:paddingBottom="@dimen/big_margin">
 
-            <!-- Shizuku status -->
+            <!-- ── Shizuku status ─────────────────────────────────────────── -->
             <TextView
                 android:id="@+id/recording_settings_status_label"
                 style="@style/SettingsSectionLabelStyle"
-                android:layout_width="wrap_content"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:text="@string/call_recording_status" />
 
-            <org.fossify.commons.views.MyTextView
-                android:id="@+id/recording_settings_status"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:lineSpacingExtra="@dimen/tiny_margin"
-                android:paddingHorizontal="@dimen/activity_margin"
-                android:paddingBottom="@dimen/medium_margin" />
+            <include
+                android:id="@+id/status_installed"
+                layout="@layout/item_recording_status" />
+
+            <include
+                android:id="@+id/status_running"
+                layout="@layout/item_recording_status" />
+
+            <include
+                android:id="@+id/status_authorized"
+                layout="@layout/item_recording_status" />
+
+            <include
+                android:id="@+id/status_key"
+                layout="@layout/item_recording_status" />
+
+            <include
+                android:id="@+id/status_enabled"
+                layout="@layout/item_recording_status" />
 
             <RelativeLayout
                 android:id="@+id/recording_settings_grant_permission_holder"
-                style="@style/SettingsHolderTextViewOneLinerStyle"
+                style="@style/SettingsHolderTextViewStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
@@ -63,24 +77,139 @@
                     android:layout_height="wrap_content"
                     android:text="@string/call_recording_grant_permission" />
 
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/recording_settings_grant_permission_summary"
+                    style="@style/SettingsTextValueStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/recording_settings_grant_permission_label"
+                    android:text="@string/call_recording_grant_permission_summary" />
+
             </RelativeLayout>
 
-            <!-- Setup -->
+            <!-- ── Shizuku authorization key ──────────────────────────────── -->
             <TextView
-                android:id="@+id/recording_settings_setup_label"
+                android:id="@+id/recording_settings_key_section_label"
                 style="@style/SettingsSectionLabelStyle"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="@string/call_recording_setup" />
-
-            <org.fossify.commons.views.MyTextView
-                android:id="@+id/recording_settings_info"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
+                android:text="@string/call_recording_key_hint" />
+
+            <org.fossify.commons.views.MyTextView
+                android:id="@+id/recording_settings_key_help"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:alpha="0.8"
+                android:paddingHorizontal="@dimen/activity_margin"
+                android:paddingBottom="@dimen/medium_margin"
+                android:text="@string/call_recording_key_help"
+                android:textSize="@dimen/normal_text_size" />
+
+            <org.fossify.commons.views.MyTextInputLayout
+                android:id="@+id/recording_settings_key_layout"
+                style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/activity_margin"
+                android:hint="@string/call_recording_key_hint"
+                app:endIconMode="password_toggle">
+
+                <com.google.android.material.textfield.TextInputEditText
+                    android:id="@+id/recording_settings_key"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:importantForAutofill="no"
+                    android:inputType="textPassword"
+                    android:singleLine="true"
+                    android:textSize="@dimen/bigger_text_size" />
+
+            </org.fossify.commons.views.MyTextInputLayout>
+
+            <org.fossify.commons.views.MyTextView
+                android:id="@+id/recording_settings_connect_result"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="@dimen/activity_margin"
+                android:paddingTop="@dimen/small_margin"
+                android:textSize="@dimen/normal_text_size"
+                android:visibility="gone" />
+
+            <FrameLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginHorizontal="@dimen/activity_margin"
+                android:layout_marginTop="@dimen/medium_margin">
+
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/recording_settings_connect"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:minHeight="52dp"
+                    android:text="@string/call_recording_connect" />
+
+                <com.google.android.material.progressindicator.CircularProgressIndicator
+                    android:id="@+id/recording_settings_progress"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_gravity="center"
+                    android:indeterminate="true"
+                    android:visibility="gone"
+                    app:indicatorSize="24dp" />
+            </FrameLayout>
+
+            <!-- ── Recording notice (consent) ─────────────────────────────── -->
+            <TextView
+                android:id="@+id/recording_settings_notice_label"
+                style="@style/SettingsSectionLabelStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/call_recording_notice_title" />
+
+            <org.fossify.commons.views.MyTextView
+                android:id="@+id/recording_settings_notice_summary"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="@dimen/activity_margin"
+                android:text="@string/call_recording_notice_summary"
+                android:textSize="@dimen/normal_text_size" />
+
+            <LinearLayout
+                android:id="@+id/recording_settings_notice_toggle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="?attr/selectableItemBackground"
+                android:gravity="center_vertical"
+                android:minHeight="48dp"
+                android:orientation="horizontal"
+                android:paddingHorizontal="@dimen/activity_margin">
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/recording_settings_notice_toggle_label"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:text="@string/call_recording_notice_read"
+                    android:textSize="@dimen/normal_text_size" />
+
+                <ImageView
+                    android:id="@+id/recording_settings_notice_chevron"
+                    android:layout_width="24dp"
+                    android:layout_height="24dp"
+                    android:contentDescription="@null"
+                    android:src="@drawable/ic_chevron_down_vector" />
+            </LinearLayout>
+
+            <org.fossify.commons.views.MyTextView
+                android:id="@+id/recording_settings_notice_full"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:alpha="0.8"
                 android:autoLink="web"
                 android:paddingHorizontal="@dimen/activity_margin"
                 android:paddingBottom="@dimen/medium_margin"
-                android:text="@string/call_recording_info" />
+                android:text="@string/call_recording_info"
+                android:textSize="@dimen/normal_text_size"
+                android:visibility="gone" />
 
             <RelativeLayout
                 android:id="@+id/recording_settings_agree_holder"
@@ -97,86 +226,54 @@
 
             </RelativeLayout>
 
-            <LinearLayout
-                android:id="@+id/recording_settings_input_holder"
+            <!-- ── Recording ──────────────────────────────────────────────── -->
+            <TextView
+                android:id="@+id/recording_settings_recording_label"
+                style="@style/SettingsSectionLabelStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:orientation="vertical"
-                android:visibility="gone">
-
-                <org.fossify.commons.views.MyTextInputLayout
-                    android:id="@+id/recording_settings_key_hint"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:hint="@string/call_recording_key_hint"
-                    android:paddingHorizontal="@dimen/activity_margin"
-                    app:endIconMode="password_toggle">
-
-                    <com.google.android.material.textfield.TextInputEditText
-                        android:id="@+id/recording_settings_key"
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:importantForAutofill="no"
-                        android:inputType="textPassword"
-                        android:singleLine="true"
-                        android:textSize="@dimen/bigger_text_size" />
-
-                </org.fossify.commons.views.MyTextInputLayout>
-
-                <org.fossify.commons.views.MyTextView
-                    android:id="@+id/recording_settings_key_help"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:alpha="0.7"
-                    android:paddingHorizontal="@dimen/activity_margin"
-                    android:paddingTop="@dimen/small_margin"
-                    android:text="@string/call_recording_key_help"
-                    android:textSize="@dimen/smaller_text_size" />
-
-                <RelativeLayout
-                    android:id="@+id/recording_settings_save_holder"
-                    style="@style/SettingsHolderTextViewOneLinerStyle"
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content">
-
-                    <org.fossify.commons.views.MyTextView
-                        android:id="@+id/recording_settings_save_label"
-                        style="@style/SettingsTextLabelStyle"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="@string/call_recording_test_and_save" />
-
-                    <com.google.android.material.progressindicator.CircularProgressIndicator
-                        android:id="@+id/recording_settings_progress"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:layout_alignParentEnd="true"
-                        android:layout_centerVertical="true"
-                        android:indeterminate="true"
-                        android:visibility="gone"
-                        app:indicatorSize="@dimen/normal_icon_size" />
-
-                </RelativeLayout>
-            </LinearLayout>
+                android:text="@string/call_recording_section" />
 
             <RelativeLayout
-                android:id="@+id/recording_settings_disable_holder"
-                style="@style/SettingsHolderTextViewOneLinerStyle"
+                android:id="@+id/recording_settings_enable_holder"
+                style="@style/SettingsHolderSwitchStyle"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
+
+                <org.fossify.commons.views.MyMaterialSwitch
+                    android:id="@+id/recording_settings_enable"
+                    style="@style/SettingsSwitchStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/call_recording_enable" />
+
+            </RelativeLayout>
+
+            <RelativeLayout
+                android:id="@+id/recording_settings_battery_holder"
+                style="@style/SettingsHolderTextViewStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
                 <org.fossify.commons.views.MyTextView
-                    android:id="@+id/recording_settings_disable_label"
+                    android:id="@+id/recording_settings_battery_label"
                     style="@style/SettingsTextLabelStyle"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="@string/call_recording_disable" />
+                    android:text="@string/call_recording_battery" />
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/recording_settings_battery_summary"
+                    style="@style/SettingsTextValueStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/recording_settings_battery_label" />
 
             </RelativeLayout>
 
             <RelativeLayout
                 android:id="@+id/recording_settings_files_holder"
-                style="@style/SettingsHolderTextViewOneLinerStyle"
+                style="@style/SettingsHolderTextViewStyle"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content">
 
@@ -186,6 +283,14 @@
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:text="@string/call_recordings" />
+
+                <org.fossify.commons.views.MyTextView
+                    android:id="@+id/recording_settings_files_summary"
+                    style="@style/SettingsTextValueStyle"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/recording_settings_files_label"
+                    android:text="@string/call_recordings_summary" />
 
             </RelativeLayout>
 

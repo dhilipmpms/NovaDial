@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.os.SystemClock
 import android.provider.ContactsContract
 import android.provider.Settings
 import android.telecom.Call
@@ -146,6 +147,16 @@ class CallActivity : SimpleActivity() {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { CallRecordingManager.state.collect { updateRecordingButton(it) } }
                 launch { CallRecordingManager.errors.collect { toast(getRecordingErrorMessage(it), Toast.LENGTH_LONG) } }
+                // Confirmations come from the recorder itself: "started" only once audio capture is running.
+                launch {
+                    CallRecordingManager.events.collect { event ->
+                        when (event) {
+                            CallRecordingManager.Event.Started -> toast(R.string.call_recording_started)
+                            is CallRecordingManager.Event.Saved ->
+                                toast(getString(R.string.call_recording_stopped_with_duration, formatRecordingDuration(event.durationMs)))
+                        }
+                    }
+                }
             }
         }
     }
@@ -1415,6 +1426,9 @@ class CallActivity : SimpleActivity() {
         isSelected = isRecording
         setActionButtonEnabled(this, enabled = state == CallRecordingManager.State.Idle || isRecording)
 
+        // A single ticking task drives both the blinking Stop button and the "● Recording 00:00" timer;
+        // removing it first guarantees there is never more than one.
+        binding.callRecordingIndicator.beVisibleIf(isRecording && !isCallEnded)
         recordingBlinkHandler.removeCallbacks(recordingBlinkTask)
         if (isRecording) {
             recordingBlinkOn = true
@@ -1425,14 +1439,32 @@ class CallActivity : SimpleActivity() {
     private var recordingBlinkOn = true
     private val recordingBlinkHandler = Handler(Looper.getMainLooper())
 
-    // Recording indicator: the Stop button blinks red while recording.
+    // While recording: the Stop button blinks red and the indicator shows the elapsed time of the real session.
     private val recordingBlinkTask = object : Runnable {
         override fun run() {
-            if (CallRecordingManager.state.value !is CallRecordingManager.State.Recording || isDestroyed) return
+            val state = CallRecordingManager.state.value as? CallRecordingManager.State.Recording ?: return
+            if (isDestroyed) return
             val red = getColor(R.color.call_reject_tint)
             binding.callToggleRecording.background.applyColorFilter(if (recordingBlinkOn) red else red.darkenColor(40))
+            binding.callRecordingIndicatorDot.alpha = if (recordingBlinkOn) 1f else 0.35f
             recordingBlinkOn = !recordingBlinkOn
-            recordingBlinkHandler.postDelayed(this, 1000L)
+
+            val elapsedMs = SystemClock.elapsedRealtime() - state.startedAtElapsed
+            binding.callRecordingIndicatorText.text = getString(R.string.call_recording_indicator, formatRecordingDuration(elapsedMs))
+            // Align ticks to whole seconds of the session so the timer never skips or repeats a second.
+            recordingBlinkHandler.postDelayed(this, 1000L - (elapsedMs % 1000L))
+        }
+    }
+
+    private fun formatRecordingDuration(durationMs: Long): String {
+        val totalSeconds = (durationMs / 1000L).coerceAtLeast(0L)
+        val hours = totalSeconds / 3600
+        val minutes = (totalSeconds % 3600) / 60
+        val seconds = totalSeconds % 60
+        return if (hours > 0) {
+            String.format(java.util.Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            String.format(java.util.Locale.getDefault(), "%02d:%02d", minutes, seconds)
         }
     }
 

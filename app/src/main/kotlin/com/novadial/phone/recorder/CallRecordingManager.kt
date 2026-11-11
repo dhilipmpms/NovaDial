@@ -13,7 +13,10 @@ import android.os.Build
 import android.os.Handler
 import android.os.Looper
 import android.os.ParcelFileDescriptor
+import android.os.SystemClock
 import android.telecom.Call
+import android.widget.Toast
+import com.novadial.phone.R
 import com.novadial.phone.helpers.CallManager
 import com.novadial.phone.helpers.CallManagerListener
 import com.novadial.phone.helpers.NoCall
@@ -59,7 +62,8 @@ object CallRecordingManager {
     sealed class State {
         data object Idle : State()
         data object Starting : State()
-        data class Recording(val fileName: String) : State()
+        /** [startedAtElapsed] is SystemClock.elapsedRealtime() when audio capture was confirmed (drives the UI timer). */
+        data class Recording(val fileName: String, val startedAtElapsed: Long) : State()
         data object Stopping : State()
     }
 
@@ -99,6 +103,17 @@ object CallRecordingManager {
 
     private val _errors = MutableSharedFlow<Error>(extraBufferCapacity = 4)
     val errors: SharedFlow<Error> = _errors.asSharedFlow()
+
+    sealed class Event {
+        /** Emitted once the capture pipeline is confirmed running (never just because a start was requested). */
+        data object Started : Event()
+
+        /** Emitted after a recording file was finalized and kept. */
+        data class Saved(val durationMs: Long) : Event()
+    }
+
+    private val _events = MutableSharedFlow<Event>(extraBufferCapacity = 4)
+    val events: SharedFlow<Event> = _events.asSharedFlow()
 
     // Session fields, guarded by [lock].
     private var sessionJob: Job? = null
@@ -203,6 +218,7 @@ object CallRecordingManager {
         var outputFd: ParcelFileDescriptor? = null
         var muxer: ScrcpyAudioMuxer? = null
         var packetsWritten = 0L
+        var recordingStartedAt = 0L
         var streamError: String? = null
         var failure: Error? = null
         // Auth key used to start the Shizuku server, only when NovaDial started it (then it is stopped afterwards).
@@ -227,6 +243,7 @@ object CallRecordingManager {
                     return
                 }
                 serverStartedWithKey = authKey
+                ShizukuAuthKeyStore.setAuthKeyVerified(context, true)
             }
             if (ShizukuConnectionManager.isPreV11()) {
                 failure = Error.SHIZUKU_TOO_OLD
@@ -275,6 +292,8 @@ object CallRecordingManager {
             }
 
             val outputFile = RecordingPaths.newRecordingFile(context, callLabel, CODEC.containerExtension)
+            // Keeps the original number (the file name only holds its digits) for the recordings list.
+            RecordingPaths.saveNumber(context, outputFile.name, callLabel)
             file = outputFile
             outputFd = ParcelFileDescriptor.open(
                 outputFile,
@@ -304,7 +323,8 @@ object CallRecordingManager {
                 if (stopRequested) {
                     false
                 } else {
-                    _state.value = State.Recording(outputFile.name)
+                    recordingStartedAt = SystemClock.elapsedRealtime()
+                    _state.value = State.Recording(outputFile.name, recordingStartedAt)
                     true
                 }
             }
@@ -314,6 +334,7 @@ object CallRecordingManager {
                 return
             }
             RecorderLog.i("Recording started")
+            _events.tryEmit(Event.Started)
 
             // Blocks until EOF (stop, call end, Shizuku death) or a stream error.
             client.start()
@@ -336,9 +357,21 @@ object CallRecordingManager {
             if (savedFile != null && packetsWritten == 0L) {
                 // Nothing usable was captured (e.g. the device does not expose VOICE_CALL audio): don't keep an empty file.
                 savedFile.delete()
+                RecordingPaths.removeMetadata(context, savedFile.name)
                 if (failure == null && !isStopRequested()) failure = Error.NO_AUDIO_CAPTURED
             } else if (savedFile != null) {
                 RecorderLog.i("Recording saved (${savedFile.length()} bytes)")
+                if (recordingStartedAt > 0L) {
+                    val durationMs = SystemClock.elapsedRealtime() - recordingStartedAt
+                    if (_events.subscriptionCount.value > 0) {
+                        _events.tryEmit(Event.Saved(durationMs))
+                    } else {
+                        // The call screen is already gone (e.g. the call ended): confirm the save from here.
+                        mainHandler.post {
+                            Toast.makeText(context, context.getString(R.string.call_recording_stopped), Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
             }
 
             runCatching { connectionManager.unbind() }

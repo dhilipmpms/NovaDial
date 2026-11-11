@@ -214,39 +214,71 @@
     <string name="call_recording_error_capture_failed">Recording failed. Your device may not allow capturing call audio.</string>
     <string name="call_recording_error_no_audio">No call audio was captured. Your device may not support call recording.</string>
 
-    <!-- Call recording setup -->
+    <!-- Call recording settings -->
     <string name="call_recording_setup">Call recording</string>
+    <string name="call_recording_setup_summary">Configure call recording</string>
     <string name="call_recording_status">Shizuku status</string>
-    <string name="call_recording_info">Call recording notice:\n\nRecording phone calls may be subject to legal regulations, restrictions, or requirements to notify or obtain the consent of call participants in some countries or under certain circumstances.\n\nBefore using this feature, make sure that its use complies with the laws and other rules applicable in your country or location.\n\nYou are solely responsible for how you use the call recording feature, including compliance with all applicable legal obligations and obtaining any required consent.\n\nThe app developer does not provide legal advice and is not responsible for the use of this feature in violation of applicable laws.\n\nBy using the call recording feature, you confirm that you have read and understood this notice and acknowledge it.\n\nRecording uses the Shizuku app (moe.shizuku.privileged.api). NovaDial can start and stop Shizuku through its automation intents (moe.shizuku.privileged.api.START / STOP), available in the thedjchi Shizuku fork: https://github.com/thedjchi/Shizuku/releases/tag/v13.7.0-thedjchi\n\nTurn off battery optimization for Shizuku, otherwise recording may not work while the screen is locked.\n\nRecording quality and availability depend on your device; some devices do not provide call audio.</string>
-    <string name="call_recording_agree">I acknowledge and agree</string>
-    <string name="call_recording_key_hint">Shizuku auth key</string>
-    <string name="call_recording_key_help">In Shizuku, open “Control Shizuku using automation apps” and tap “Show intents” to find the auth key. Without a key, Shizuku must already be running when you record.</string>
-    <string name="call_recording_test_and_save">Test connection and save</string>
-    <string name="call_recording_disable">Turn off call recording</string>
-    <string name="call_recording_grant_permission">Grant Shizuku permission to NovaDial</string>
-    <string name="call_recording_key_required">Shizuku is not running: enter the Shizuku auth key, or start Shizuku first</string>
-    <string name="call_recording_key_saved">Test completed successfully, settings saved</string>
-    <string name="call_recording_test_failed">Test failed: %s</string>
-    <string name="call_recording_status_installed">Shizuku is installed</string>
-    <string name="call_recording_status_not_installed">Shizuku is not installed</string>
-    <string name="call_recording_status_automation">Shizuku supports start/stop with an auth key</string>
-    <string name="call_recording_status_no_automation">Shizuku start/stop intents not available (start Shizuku manually)</string>
-    <string name="call_recording_status_running">Shizuku is running</string>
-    <string name="call_recording_status_not_running">Shizuku is not running</string>
-    <string name="call_recording_status_permission">NovaDial is authorized in Shizuku</string>
-    <string name="call_recording_status_no_permission">NovaDial is not authorized in Shizuku</string>
-    <string name="call_recording_status_permission_unknown">Authorization is checked when Shizuku is running</string>
-    <string name="call_recording_status_key_saved">Auth key saved</string>
-    <string name="call_recording_status_no_key">No auth key saved</string>
-    <string name="call_recording_status_enabled">Call recording is enabled</string>
-    <string name="call_recording_status_disabled">Call recording is disabled</string>
+    <string name="call_recording_status_installed">Shizuku installed</string>
+    <string name="call_recording_status_running">Shizuku running</string>
+    <string name="call_recording_status_authorized">NovaDial authorized</string>
+    <string name="call_recording_status_key">Authorization key</string>
+    <string name="call_recording_status_enabled">Call recording</string>
+    <string name="call_recording_value_yes">Installed</string>
+    <string name="call_recording_value_not_installed">Not installed</string>
+    <string name="call_recording_value_running">Running</string>
+    <string name="call_recording_value_starts_automatically">Starts automatically</string>
+    <string name="call_recording_value_not_running">Not running</string>
+    <string name="call_recording_value_authorized">Authorized</string>
+    <string name="call_recording_value_not_authorized">Not authorized</string>
+    <string name="call_recording_value_denied">Denied</string>
+    <string name="call_recording_value_checked_when_running">Checked when running</string>
+    <string name="call_recording_value_key_verified">Verified</string>
+    <string name="call_recording_value_key_not_verified">Saved, not verified</string>
+    <string name="call_recording_value_key_unsupported">Not supported by this Shizuku</string>
+    <string name="call_recording_value_not_set">Not set</string>
+    <string name="call_recording_value_on">On</string>
+    <string name="call_recording_value_off">Off</string>
+    <string name="call_recording_grant_permission">Authorize NovaDial in Shizuku</string>
+    <string name="call_recording_grant_permission_summary">Required to record calls</string>
 
-    <!-- Call recordings screen -->
+    <string name="call_recording_key_hint">Shizuku authorization key</string>
+    <string name="call_recording_key_help">In Shizuku, open “Control Shizuku using automation apps” → “Show intents” and copy the auth key. Lets NovaDial start Shizuku when you record.</string>
+    <string name="call_recording_connect">Connect Shizuku</string>
+    <string name="call_recording_connecting">Connecting…</string>
+    <string name="call_recording_connected">Connected. Call recording is ready.</string>
+    <string name="call_recording_connected_key_not_verified">Connected. The key will be verified the next time NovaDial starts Shizuku.</string>
+    <string name="call_recording_connect_failed_key">Shizuku did not start with this key. Check the key and try again.</string>
+    <string name="call_recording_test_failed">Connection failed: %s</string>
+    <string name="call_recording_key_required">Shizuku is not running. Enter the authorization key or start Shizuku first.</string>
+    <string name="call_recording_accept_notice_first">Accept the recording notice below first</string>
+
+    <string name="call_recording_notice_title">Recording notice</string>
+    <string name="call_recording_notice_summary">Call recording may be regulated where you live. You are responsible for following the law and getting consent when required.</string>
+    <string name="call_recording_notice_read">Read full notice</string>
+    <string name="call_recording_info">Recording phone calls may be subject to legal regulations, restrictions, or requirements to notify or obtain the consent of call participants in some countries or under certain circumstances.\n\nBefore using this feature, make sure that its use complies with the laws and other rules applicable in your country or location.\n\nYou are solely responsible for how you use the call recording feature, including compliance with all applicable legal obligations and obtaining any required consent.\n\nThe app developer does not provide legal advice and is not responsible for the use of this feature in violation of applicable laws.\n\nBy using the call recording feature, you confirm that you have read and understood this notice and acknowledge it.\n\nRecording uses the Shizuku app. Starting Shizuku with an authorization key requires the thedjchi Shizuku fork: https://github.com/thedjchi/Shizuku/releases/tag/v13.7.0-thedjchi\n\nRecording availability and quality depend on your device; some devices do not provide call audio.</string>
+    <string name="call_recording_agree">I acknowledge and agree</string>
+
+    <string name="call_recording_section">Recording</string>
+    <string name="call_recording_enable">Record calls</string>
+    <string name="call_recording_battery">Battery optimization for Shizuku</string>
+    <string name="call_recording_battery_unrestricted">Unrestricted</string>
+    <string name="call_recording_battery_optimized">Optimized. Tap and set battery usage to Unrestricted so recording works with the screen locked.</string>
+
+    <!-- In-call recording feedback -->
+    <string name="call_recording_indicator">Recording %s</string>
+    <string name="call_recording_started">Call recording started</string>
+    <string name="call_recording_stopped">Call recording stopped</string>
+    <string name="call_recording_stopped_with_duration">Call recording stopped (%s)</string>
+
+    <!-- Call recordings (history) -->
     <string name="call_recordings">Call recordings</string>
-    <string name="call_recordings_summary">Recordings are stored privately in NovaDial and removed if the app is uninstalled</string>
+    <string name="call_recordings_summary">Play and manage saved recordings</string>
     <string name="no_call_recordings">No call recordings yet</string>
+    <string name="no_call_recordings_subtitle">Completed recordings will appear here.</string>
     <string name="call_recording_play">Play</string>
+    <string name="call_recording_pause">Pause</string>
+    <string name="call_recording_seek">Playback position</string>
     <string name="call_recording_share">Share</string>
     <string name="call_recording_delete_confirmation">Delete this recording?</string>
-    <string name="call_recording_no_player">No app found to play this recording</string>
+    <string name="call_recording_unavailable">This recording can\'t be played. The file may be missing or damaged.</string>
 </resources>

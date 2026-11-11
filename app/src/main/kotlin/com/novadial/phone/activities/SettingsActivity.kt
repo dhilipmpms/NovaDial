@@ -416,9 +416,6 @@ class SettingsActivity : SimpleActivity() {
         binding.settingsCallRecordingSetupHolder.setOnClickListener {
             startActivity(Intent(this@SettingsActivity, CallRecordingSettingsActivity::class.java))
         }
-        binding.settingsCallRecordingsHolder.setOnClickListener {
-            startActivity(Intent(this@SettingsActivity, RecordingsActivity::class.java))
-        }
     }
 
     private fun setupManageBlockedNumbers() {
