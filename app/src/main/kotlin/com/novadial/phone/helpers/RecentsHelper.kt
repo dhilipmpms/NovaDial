@@ -978,8 +978,10 @@ class RecentsHelper(private val context: Context) {
             Calls._ID, Calls.NUMBER, Calls.CACHED_NAME, Calls.CACHED_PHOTO_URI,
             Calls.DATE, Calls.DURATION, Calls.TYPE, Calls.PHONE_ACCOUNT_ID, Calls.NUMBER_PRESENTATION
         )
+        // LIMIT in the sort order throws "Invalid token LIMIT" when we are not the default dialer.
+        val limitedUri = contentUri.buildUpon().appendQueryParameter(Calls.LIMIT_PARAM_KEY, "1").build()
         val cursor = context.contentResolver.query(
-            contentUri, projection, null, null, "${Calls.DATE} DESC LIMIT 1"
+            limitedUri, projection, null, null, "${Calls.DATE} DESC"
         )
         cursor?.use {
             if (it.moveToFirst()) {
