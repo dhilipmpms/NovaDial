@@ -106,6 +106,7 @@ class SettingsActivity : SimpleActivity() {
         setupLanguage()
         setupDefaultDialer()
         setupManageBlockedNumbers()
+        setupCallRecordings()
         setupManageSpeedDial()
         setupChangeDateTimeFormat()
         setupFontSize()
@@ -408,6 +409,15 @@ class SettingsActivity : SimpleActivity() {
                     launchSetDefaultDialerIntentSafe()
                 }
             }
+        }
+    }
+
+    private fun setupCallRecordings() {
+        binding.settingsCallRecordingSetupHolder.setOnClickListener {
+            startActivity(Intent(this@SettingsActivity, CallRecordingSettingsActivity::class.java))
+        }
+        binding.settingsCallRecordingsHolder.setOnClickListener {
+            startActivity(Intent(this@SettingsActivity, RecordingsActivity::class.java))
         }
     }
 

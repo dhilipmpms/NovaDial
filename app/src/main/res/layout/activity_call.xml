@@ -372,7 +372,7 @@
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:layout_marginHorizontal="@dimen/medium_margin"
-            app:constraint_referenced_ids="call_toggle_microphone,call_toggle_speaker,call_audio_bluetooth,call_dialpad,call_toggle_hold,call_add,call_manage,call_swap,call_merge"
+            app:constraint_referenced_ids="call_toggle_microphone,call_toggle_speaker,call_audio_bluetooth,call_dialpad,call_toggle_hold,call_add,call_manage,call_swap,call_merge,call_toggle_recording"
             app:flow_horizontalGap="@dimen/activity_margin"
             app:flow_maxElementsWrap="3"
             app:flow_verticalGap="@dimen/activity_margin"
@@ -480,6 +480,17 @@
             android:contentDescription="@string/call_merge"
             android:padding="@dimen/activity_margin"
             android:src="@drawable/ic_call_merge_vector"
+            app:layout_constraintDimensionRatio="1:1"
+            app:layout_constraintHeight_max="@dimen/call_control_button_size" />
+
+        <ImageView
+            android:id="@+id/call_toggle_recording"
+            android:layout_width="0dp"
+            android:layout_height="0dp"
+            android:background="@drawable/circle_background"
+            android:contentDescription="@string/call_recording_start"
+            android:padding="@dimen/activity_margin"
+            android:src="@drawable/ic_record_vector"
             app:layout_constraintDimensionRatio="1:1"
             app:layout_constraintHeight_max="@dimen/call_control_button_size" />
 
