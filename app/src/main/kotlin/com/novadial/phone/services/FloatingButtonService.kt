@@ -56,6 +56,19 @@ class FloatingButtonService : Service() {
         fun resetHiddenState() {
             hiddenCallId = null
         }
+
+        /**
+         * Stops the service through a command instead of Context.stopService(). A service started with
+         * startForegroundService() that is stopped before it ran startForeground() makes Android crash the whole
+         * process (ForegroundServiceDidNotStartInTimeException), which also kills CallService and lets Telecom
+         * hand the ongoing call to the system dialer. Commands are delivered in order, so the service always
+         * calls startForeground() first and then stops itself.
+         */
+        const val ACTION_STOP = "com.novadial.phone.action.STOP_FLOATING_BUTTON"
+
+        /** True between a start request and the service's destruction; avoids starting the service just to stop it. */
+        @Volatile
+        var isStartRequested = false
     }
 
     private var windowManager: WindowManager? = null
@@ -96,6 +109,12 @@ class FloatingButtonService : Service() {
 
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
         startForegroundIfNeeded()
+
+        if (intent?.action == ACTION_STOP) {
+            removeFloatingView()
+            stopSelf()
+            return START_NOT_STICKY
+        }
 
         if (CallManager.getPhoneState() == NoCall) {
             hiddenCallId = null
@@ -476,6 +495,7 @@ class FloatingButtonService : Service() {
     }
 
     override fun onDestroy() {
+        isStartRequested = false
         CallManager.removeListener(callManagerListener)
         removeFloatingView()
         windowManager = null
