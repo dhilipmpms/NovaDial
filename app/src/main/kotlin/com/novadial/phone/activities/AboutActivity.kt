@@ -136,6 +136,54 @@ class AboutActivity : BaseComposeActivity() {
                         )
                     }
 
+                    // Special thanks (call recording)
+                    SettingsGroup(title = {
+                        SettingsTitleTextComponent(
+                            text = "Special thanks",
+                            modifier = titleStartPadding
+                        )
+                    }) {
+                        SettingsListItem(
+                            tint = SimpleTheme.colorScheme.onSurface,
+                            click = {
+                                launchViewIntent("https://github.com/kitsumed/ShizuCallRecorder")
+                            },
+                            text = "ShizuCallRecorder by kitsumed",
+                            description = "NovaDial's call recording is based on ShizuCallRecorder, available at https://github.com/kitsumed/ShizuCallRecorder (GPL-3.0)",
+                            icon = R.drawable.ic_github_vector
+                        )
+
+                        SettingsListItem(
+                            tint = SimpleTheme.colorScheme.onSurface,
+                            click = {
+                                launchViewIntent("https://github.com/RikkaApps/Shizuku")
+                            },
+                            text = "Shizuku",
+                            description = "https://github.com/RikkaApps/Shizuku",
+                            icon = R.drawable.ic_github_vector
+                        )
+
+                        SettingsListItem(
+                            tint = SimpleTheme.colorScheme.onSurface,
+                            click = {
+                                launchViewIntent("https://github.com/martintobola-cz")
+                            },
+                            text = "Martin Tobola",
+                            description = "For sharing his Shizuku call recording integration",
+                            icon = R.drawable.ic_github_vector
+                        )
+
+                        SettingsListItem(
+                            tint = SimpleTheme.colorScheme.onSurface,
+                            click = {
+                                launchViewIntent("https://github.com/Genymobile/scrcpy")
+                            },
+                            text = "scrcpy by Genymobile",
+                            description = "scrcpy-server is used to capture call audio (Apache-2.0)",
+                            icon = R.drawable.ic_github_vector
+                        )
+                    }
+
                     // 3. GitHub Section
                     SettingsGroup(title = {
                         SettingsTitleTextComponent(

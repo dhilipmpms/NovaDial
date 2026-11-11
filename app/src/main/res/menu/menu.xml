@@ -40,6 +40,11 @@
         android:title="@string/settings"
         app:showAsAction="never" />
     <item
+        android:id="@+id/call_recordings"
+        android:icon="@drawable/ic_record_vector"
+        android:title="@string/call_recordings"
+        app:showAsAction="never" />
+    <item
         android:id="@+id/about"
         android:icon="@drawable/ic_info_vector"
         android:title="@string/about"

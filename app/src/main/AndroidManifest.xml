@@ -44,6 +44,8 @@
     <queries>
         <package android:name="org.fossify.contacts.debug" />
         <package android:name="org.fossify.contacts" />
+        <!-- Call recording: detect the Shizuku app -->
+        <package android:name="moe.shizuku.privileged.api" />
 
         <!-- Required for loading contact accounts -->
         <intent>
@@ -185,6 +187,20 @@
                 <data android:mimeType="vnd.android.cursor.dir/person" />
             </intent-filter>
         </activity>
+
+        <activity
+            android:name=".activities.CallRecordingSettingsActivity"
+            android:configChanges="orientation|screenSize"
+            android:exported="false"
+            android:label="@string/call_recording_setup"
+            android:parentActivityName=".activities.SettingsActivity" />
+
+        <activity
+            android:name=".activities.RecordingsActivity"
+            android:configChanges="orientation|screenSize"
+            android:exported="false"
+            android:label="@string/call_recordings"
+            android:parentActivityName=".activities.SettingsActivity" />
 
         <activity
             android:name=".activities.ContactFullHistoryActivity"
@@ -593,5 +609,14 @@
                 android:name="android.support.FILE_PROVIDER_PATHS"
                 android:resource="@xml/file_paths" />
         </provider>
+
+        <!-- Delivers the Shizuku binder to NovaDial (call recording). Protected by a system-only permission. -->
+        <provider
+            android:name="rikka.shizuku.ShizukuProvider"
+            android:authorities="${applicationId}.shizuku"
+            android:enabled="true"
+            android:exported="true"
+            android:multiprocess="false"
+            android:permission="android.permission.INTERACT_ACROSS_USERS_FULL" />
     </application>
 </manifest>

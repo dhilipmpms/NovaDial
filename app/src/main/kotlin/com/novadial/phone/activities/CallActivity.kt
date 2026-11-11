@@ -13,6 +13,7 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.os.PowerManager
+import android.os.SystemClock
 import android.provider.ContactsContract
 import android.provider.Settings
 import android.telecom.Call
@@ -24,6 +25,7 @@ import android.view.WindowManager
 import android.view.animation.AccelerateDecelerateInterpolator
 import android.view.animation.OvershootInterpolator
 import android.widget.ImageView
+import android.widget.Toast
 import androidx.activity.viewModels
 import androidx.core.content.res.ResourcesCompat
 import androidx.core.os.postDelayed
@@ -46,6 +48,8 @@ import com.novadial.phone.helpers.*
 import com.novadial.phone.models.AudioRoute
 import com.novadial.phone.models.CallContact
 import com.novadial.phone.models.CallScreenViewModel
+import com.novadial.phone.recorder.CallRecordingManager
+import com.novadial.phone.recorder.ShizukuAuthKeyStore
 import com.novadial.phone.services.FloatingButtonService
 import kotlinx.coroutines.launch
 import kotlin.math.max
@@ -137,6 +141,24 @@ class CallActivity : SimpleActivity() {
                 }
             }
         }
+
+        // Native call recording (Shizuku): the Record button mirrors the recorder's real state.
+        lifecycleScope.launch {
+            repeatOnLifecycle(Lifecycle.State.STARTED) {
+                launch { CallRecordingManager.state.collect { updateRecordingButton(it) } }
+                launch { CallRecordingManager.errors.collect { toast(getRecordingErrorMessage(it), Toast.LENGTH_LONG) } }
+                // Confirmations come from the recorder itself: "started" only once audio capture is running.
+                launch {
+                    CallRecordingManager.events.collect { event ->
+                        when (event) {
+                            CallRecordingManager.Event.Started -> toast(R.string.call_recording_started)
+                            is CallRecordingManager.Event.Saved ->
+                                toast(getString(R.string.call_recording_stopped_with_duration, formatRecordingDuration(event.durationMs)))
+                        }
+                    }
+                }
+            }
+        }
     }
 
     override fun onNewIntent(intent: Intent) {
@@ -173,6 +195,7 @@ class CallActivity : SimpleActivity() {
     override fun onDestroy() {
         super.onDestroy()
         CallManager.removeListener(callCallback)
+        recordingBlinkHandler.removeCallbacksAndMessages(null)
         callAudioManager.release()
         disableProximitySensor()
         stopFloatingButton()
@@ -298,6 +321,10 @@ class CallActivity : SimpleActivity() {
             startActivity(Intent(this@CallActivity, ConferenceActivity::class.java))
         }
 
+        callToggleRecording.setOnClickListener {
+            onRecordingButtonClicked()
+        }
+
         callEnd.setOnClickListener {
             endCall()
         }
@@ -356,7 +383,7 @@ class CallActivity : SimpleActivity() {
         val inactiveColor = getInactiveButtonColor()
         arrayOf(
             callToggleMicrophone, callToggleSpeaker, callAudioBluetooth, callDialpad,
-            callToggleHold, callAdd, callSwap, callMerge, callManage
+            callToggleHold, callAdd, callSwap, callMerge, callManage, callToggleRecording
         ).forEach {
             it.applyColorFilter(bgColor.getContrastColor())
             it.background.applyColorFilter(inactiveColor)
@@ -364,7 +391,7 @@ class CallActivity : SimpleActivity() {
 
         arrayOf(
             callToggleMicrophone, callToggleSpeaker, callAudioBluetooth, callDialpad,
-            callToggleHold, callAdd, callSwap, callMerge, callManage
+            callToggleHold, callAdd, callSwap, callMerge, callManage, callToggleRecording
         ).forEach { imageView ->
             imageView.setOnLongClickListener {
                 if (!imageView.contentDescription.isNullOrEmpty()) {
@@ -991,6 +1018,7 @@ class CallActivity : SimpleActivity() {
         }
 
         updateCallAudioState(CallManager.getCallAudioRoute())
+        updateRecordingButton()
     }
 
     private fun updateCallOnHoldState(call: Call?) {
@@ -1346,6 +1374,115 @@ class CallActivity : SimpleActivity() {
             view.background.applyColorFilter(getInactiveButtonColor())
             view.applyColorFilter(getProperBackgroundColor().getContrastColor())
         }
+    }
+
+    // ── Call recording (native, Shizuku) ───────────────────────────────────
+
+    private fun onRecordingButtonClicked() {
+        when (CallRecordingManager.state.value) {
+            CallRecordingManager.State.Idle -> {
+                val number = CallManager.getPrimaryCall()?.details?.handle?.schemeSpecificPart.orEmpty()
+                CallRecordingManager.start(this, number)
+            }
+
+            is CallRecordingManager.State.Recording -> CallRecordingManager.stop()
+            // Starting/Stopping: the button is disabled; ignore queued taps.
+            else -> Unit
+        }
+    }
+
+    private fun updateRecordingButton(state: CallRecordingManager.State = CallRecordingManager.state.value) = binding.callToggleRecording.apply {
+        // Shown while a call is active (or while a session still exists, e.g. a held call during call waiting).
+        // Visibility is left alone while the dialpad covers the controls; hideDialpad() restores it.
+        // The control only exists once call recording was enabled in Settings → Call recording.
+        val shouldShow = !isCallEnded && (state != CallRecordingManager.State.Idle ||
+            (ShizukuAuthKeyStore.isRecordingAllowed(this@CallActivity) && CallRecordingManager.isEligibleCallActive()))
+        if (!binding.dialpadWrapper.isVisible()) {
+            beVisibleIf(shouldShow)
+        }
+
+        val isRecording = state is CallRecordingManager.State.Recording
+        when (state) {
+            CallRecordingManager.State.Idle -> {
+                setImageResource(R.drawable.ic_record_vector)
+                toggleButtonColor(this, enabled = false)
+                contentDescription = getString(R.string.call_recording_start)
+            }
+
+            CallRecordingManager.State.Starting, CallRecordingManager.State.Stopping -> {
+                setImageResource(R.drawable.ic_hourglass_vector)
+                toggleButtonColor(this, enabled = false)
+                contentDescription = getString(
+                    if (state == CallRecordingManager.State.Starting) R.string.call_recording_starting else R.string.call_recording_stopping
+                )
+            }
+
+            is CallRecordingManager.State.Recording -> {
+                setImageResource(R.drawable.ic_stop_vector)
+                applyColorFilter(android.graphics.Color.WHITE)
+                contentDescription = getString(R.string.call_recording_stop)
+            }
+        }
+        isSelected = isRecording
+        setActionButtonEnabled(this, enabled = state == CallRecordingManager.State.Idle || isRecording)
+
+        // A single ticking task drives both the blinking Stop button and the "● Recording 00:00" timer;
+        // removing it first guarantees there is never more than one.
+        binding.callRecordingIndicator.beVisibleIf(isRecording && !isCallEnded)
+        recordingBlinkHandler.removeCallbacks(recordingBlinkTask)
+        if (isRecording) {
+            recordingBlinkOn = true
+            recordingBlinkTask.run()
+        }
+    }
+
+    private var recordingBlinkOn = true
+    private val recordingBlinkHandler = Handler(Looper.getMainLooper())
+
+    // While recording: the Stop button blinks red and the indicator shows the elapsed time of the real session.
+    private val recordingBlinkTask = object : Runnable {
+        override fun run() {
+            val state = CallRecordingManager.state.value as? CallRecordingManager.State.Recording ?: return
+            if (isDestroyed) return
+            val red = getColor(R.color.call_reject_tint)
+            binding.callToggleRecording.background.applyColorFilter(if (recordingBlinkOn) red else red.darkenColor(40))
+            binding.callRecordingIndicatorDot.alpha = if (recordingBlinkOn) 1f else 0.35f
+            recordingBlinkOn = !recordingBlinkOn
+
+            val elapsedMs = SystemClock.elapsedRealtime() - state.startedAtElapsed
+            binding.callRecordingIndicatorText.text = getString(R.string.call_recording_indicator, formatRecordingDuration(elapsedMs))
+            // Align ticks to whole seconds of the session so the timer never skips or repeats a second.
+            recordingBlinkHandler.postDelayed(this, 1000L - (elapsedMs % 1000L))
+        }
+    }
+
+    private fun formatRecordingDuration(durationMs: Long): String {
+        val totalSeconds = (durationMs / 1000L).coerceAtLeast(0L)
+        val hours = totalSeconds / 3600
+        val minutes = (totalSeconds % 3600) / 60
+        val seconds = totalSeconds % 60
+        return if (hours > 0) {
+            String.format(java.util.Locale.getDefault(), "%d:%02d:%02d", hours, minutes, seconds)
+        } else {
+            String.format(java.util.Locale.getDefault(), "%02d:%02d", minutes, seconds)
+        }
+    }
+
+    private fun getRecordingErrorMessage(error: CallRecordingManager.Error): Int = when (error) {
+        CallRecordingManager.Error.NOT_ENABLED -> R.string.call_recording_error_not_enabled
+        CallRecordingManager.Error.SHIZUKU_START_FAILED -> R.string.call_recording_error_shizuku_start_failed
+        CallRecordingManager.Error.UNSUPPORTED_ANDROID_VERSION -> R.string.call_recording_error_android_version
+        CallRecordingManager.Error.NO_ACTIVE_CALL -> R.string.call_recording_error_no_active_call
+        CallRecordingManager.Error.SHIZUKU_NOT_INSTALLED -> R.string.call_recording_error_shizuku_not_installed
+        CallRecordingManager.Error.SHIZUKU_NOT_RUNNING -> R.string.call_recording_error_shizuku_not_running
+        CallRecordingManager.Error.SHIZUKU_TOO_OLD -> R.string.call_recording_error_shizuku_too_old
+        CallRecordingManager.Error.SHIZUKU_PERMISSION_DENIED -> R.string.call_recording_error_permission_denied
+        CallRecordingManager.Error.SHIZUKU_PERMISSION_DENIED_PERMANENTLY -> R.string.call_recording_error_permission_denied_permanently
+        CallRecordingManager.Error.SHIZUKU_DISCONNECTED -> R.string.call_recording_error_shizuku_disconnected
+        CallRecordingManager.Error.START_TIMEOUT -> R.string.call_recording_error_timeout
+        CallRecordingManager.Error.RECORDER_FILES_UNAVAILABLE -> R.string.call_recording_error_files
+        CallRecordingManager.Error.CAPTURE_FAILED -> R.string.call_recording_error_capture_failed
+        CallRecordingManager.Error.NO_AUDIO_CAPTURED -> R.string.call_recording_error_no_audio
     }
 
     private fun clearChar(view: View) {

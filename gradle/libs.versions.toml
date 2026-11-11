@@ -22,6 +22,11 @@ ezvcard = "0.12.2"
 indicatorFastScroll = "c7873f7168"
 autofitTextView = "0.2.1"
 libphonenumberVersion = "9.0.35"
+#Call recording (Shizuku API + scrcpy-server binary downloaded at build time)
+shizuku = "13.1.5"
+# scrcpy MUST stay 4.0: ScrcpyClient parses the binary protocol of this exact version.
+# When changing it, also update scrcpyServerSha256 in app/build.gradle.kts.
+scrcpy = "4.0"
 #build
 app-build-compileSDKVersion = "36"
 app-build-targetSDK = "36"
@@ -47,6 +52,9 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 indicator-fast-scroll = { module = "org.fossify:IndicatorFastScroll", version.ref = "indicatorFastScroll" }
 autofit-text-view = { module = "me.grantland:autofittextview", version.ref = "autofitTextView" }
 libphonenumber = { module = "com.googlecode.libphonenumber:libphonenumber", version.ref = "libphonenumberVersion" }
+#Shizuku
+shizuku-api = { module = "dev.rikka.shizuku:api", version.ref = "shizuku" }
+shizuku-provider = { module = "dev.rikka.shizuku:provider", version.ref = "shizuku" }
 [plugins]
 android = { id = "com.android.application", version.ref = "gradlePlugins-agp" }
 kotlinSerialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }
