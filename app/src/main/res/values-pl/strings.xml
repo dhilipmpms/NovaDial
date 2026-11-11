@@ -160,4 +160,8 @@
     <string name="add_a_blocked_number">Dodaj zablokowany numer</string>
     <string name="show_audio_route_buttons">Wyświetlaj osobne przyciski głośnika i Bluetooth podczas połączeń</string>
     <string name="show_frequent_contacts_shortcuts">Wyświetlaj najczęściej wybierane kontakty po długim naciśnięciu ikony aplikacji</string>
+    <string name="default_contact_account">Domyślne konto dla nowych kontaktów</string>
+    <string name="local_save_blocked_by_cloud_default">Domyślnym kontem telefonu dla nowych kontaktów jest %s. System Android umożliwia aplikacjom zapisywanie kontaktów w pamięci urządzenia lub na karcie SIM tylko wtedy, gdy zmienisz to ustawienie domyślne na „Urządzenie”.</string>
+    <string name="change_default_account">Zmień domyślne</string>
+    <string name="default_account_settings_unavailable">Otwórz ustawienia aplikacji Kontakty na telefonie, aby zmienić domyślne konto</string>
 </resources>
