@@ -38,6 +38,7 @@ val tabsList = arrayListOf(TAB_FAVORITES, TAB_CALL_HISTORY, TAB_CONTACTS)
 private const val PATH = "com.novadial.phone.action."
 const val ACCEPT_CALL = PATH + "ACCEPT_CALL"
 const val DECLINE_CALL = PATH + "DECLINE_CALL"
+const val END_CALL = PATH + "END_CALL"
 const val TOGGLE_MUTE = PATH + "TOGGLE_MUTE"
 const val TOGGLE_SPEAKER = PATH + "TOGGLE_SPEAKER"
 const val DISMISS_CALL_NOTIFICATION = PATH + "DISMISS_CALL_NOTIFICATION"

@@ -1514,11 +1514,20 @@ class CallActivity : SimpleActivity() {
             } else {
                 startService(intent)
             }
+            FloatingButtonService.isStartRequested = true
         } catch (_: Exception) {
         }
     }
 
     private fun stopFloatingButton() {
-        stopService(Intent(this, FloatingButtonService::class.java))
+        // Never stopService(): if this runs right after startFloatingButton() (pause/resume in quick succession,
+        // e.g. when answering), the service would be stopped before calling startForeground() and Android would
+        // crash NovaDial mid-call. The stop command is queued behind the start, see FloatingButtonService.ACTION_STOP.
+        if (!FloatingButtonService.isStartRequested) return
+        try {
+            startService(Intent(this, FloatingButtonService::class.java).setAction(FloatingButtonService.ACTION_STOP))
+        } catch (_: Exception) {
+            // Not allowed to start services right now: the service stops itself when the call ends (checkCallState).
+        }
     }
 }

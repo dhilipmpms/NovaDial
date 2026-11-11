@@ -11,6 +11,9 @@ import android.content.Context
 import android.content.Intent
 import android.content.pm.ServiceInfo
 import android.os.Build
+import android.os.Handler
+import android.os.Looper
+import android.os.SystemClock
 import android.telecom.Call
 import android.widget.RemoteViews
 import org.fossify.commons.extensions.notificationManager
@@ -33,8 +36,32 @@ class CallNotificationManager(private val context: Context) {
         private const val CALL_NOTIFICATION_ID = 42
         private const val ACCEPT_CALL_CODE = 0
         private const val DECLINE_CALL_CODE = 1
+        private const val MUTE_CALL_CODE = 2
+        private const val SPEAKER_CALL_CODE = 3
+        private const val DISMISS_CALL_CODE = 4
+        private const val END_CALL_CODE = 5
         private var postedFullScreenIntentCallKey: String? = null
+
+        /** Identifies the call a notification action was created for (see [CallActionReceiver]). */
+        const val EXTRA_CALL_KEY = "com.novadial.phone.extra.CALL_KEY"
+
+        /**
+         * Android sheds notification *updates* posted faster than ~5 per second per app, and the dropped one
+         * can be the last state (e.g. RINGING -> ACTIVE), leaving a stale incoming notification. Updates are
+         * therefore coalesced and spaced by this interval; the latest pending state is always posted.
+         */
+        private const val MIN_POST_INTERVAL_MS = 300L
+
+        fun getCallKey(call: Call): String {
+            val handle = call.details?.handle?.toString()?.takeIf { it.isNotEmpty() }
+            return handle ?: call.toString()
+        }
     }
+
+    private val mainHandler = Handler(Looper.getMainLooper())
+    private var lastPostUptime = 0L
+    private var lastPostedSignature: String? = null
+    private var pendingPost: Runnable? = null
 
     private val notificationManager = context.notificationManager
     private val callContactAvatarHelper = CallContactAvatarHelper(context)
@@ -117,48 +144,26 @@ class CallNotificationManager(private val context: Context) {
         val openAppIntent = CallActivity.getStartIntent(context)
         val openAppPendingIntent = PendingIntent.getActivity(context, 0, openAppIntent, PendingIntent.FLAG_MUTABLE)
 
-        // FLAG_UPDATE_CURRENT, not FLAG_CANCEL_CURRENT: the system drops notification updates when
-        // they are posted too quickly, so the visible notification can still hold an older
-        // PendingIntent. Cancelling it made Hang up/Accept do nothing until another update arrived.
-        val acceptCallIntent = Intent(context, CallActionReceiver::class.java).apply { action = ACCEPT_CALL }
-        val acceptPendingIntent = PendingIntent.getBroadcast(
-            context,
-            ACCEPT_CALL_CODE,
-            acceptCallIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-        )
+        // Explicit NovaDial broadcasts, immutable, carrying the key of the call they were created for, so a
+        // stale action (e.g. Answer from an outdated incoming notification) can be recognized and ignored.
+        // FLAG_UPDATE_CURRENT, not FLAG_CANCEL_CURRENT: a cancelled PendingIntent would make the buttons of a
+        // still-visible notification do nothing until the next update.
+        fun actionIntent(action: String, requestCode: Int): PendingIntent {
+            val intent = Intent(context, CallActionReceiver::class.java).apply {
+                this.action = action
+                setPackage(context.packageName)
+                putExtra(EXTRA_CALL_KEY, callKey)
+            }
+            return PendingIntent.getBroadcast(context, requestCode, intent, PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE)
+        }
 
-        val declineCallIntent = Intent(context, CallActionReceiver::class.java).apply { action = DECLINE_CALL }
-        val declinePendingIntent = PendingIntent.getBroadcast(
-            context,
-            DECLINE_CALL_CODE,
-            declineCallIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-        )
-
-        val muteCallIntent = Intent(context, CallActionReceiver::class.java).apply { action = TOGGLE_MUTE }
-        val mutePendingIntent = PendingIntent.getBroadcast(
-            context,
-            2,
-            muteCallIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-        )
-
-        val speakerCallIntent = Intent(context, CallActionReceiver::class.java).apply { action = TOGGLE_SPEAKER }
-        val speakerPendingIntent = PendingIntent.getBroadcast(
-            context,
-            3,
-            speakerCallIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-        )
-
-        val deleteCallIntent = Intent(context, CallActionReceiver::class.java).apply { action = DISMISS_CALL_NOTIFICATION }
-        val deletePendingIntent = PendingIntent.getBroadcast(
-            context,
-            4,
-            deleteCallIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_MUTABLE
-        )
+        val isRinging = callState == Call.STATE_RINGING
+        val acceptPendingIntent = actionIntent(ACCEPT_CALL, ACCEPT_CALL_CODE)
+        // The red button declines while ringing and ends the call afterwards: two different actions.
+        val declineOrEndPendingIntent = if (isRinging) actionIntent(DECLINE_CALL, DECLINE_CALL_CODE) else actionIntent(END_CALL, END_CALL_CODE)
+        val mutePendingIntent = actionIntent(TOGGLE_MUTE, MUTE_CALL_CODE)
+        val speakerPendingIntent = actionIntent(TOGGLE_SPEAKER, SPEAKER_CALL_CODE)
+        val deletePendingIntent = actionIntent(DISMISS_CALL_NOTIFICATION, DISMISS_CALL_CODE)
 
         var callerName = callContact.name.ifEmpty { context.getString(R.string.unknown_caller) }
         if (callContact.numberLabel.isNotEmpty()) {
@@ -170,6 +175,7 @@ class CallNotificationManager(private val context: Context) {
             Call.STATE_DIALING -> R.string.dialing
             Call.STATE_DISCONNECTED -> R.string.call_ended
             Call.STATE_DISCONNECTING -> R.string.call_ending
+            Call.STATE_HOLDING -> R.string.call_on_hold
             else -> R.string.ongoing_call
         }
 
@@ -180,7 +186,7 @@ class CallNotificationManager(private val context: Context) {
         val collapsedView = RemoteViews(context.packageName, R.layout.call_notification).apply {
             setText(R.id.notification_caller_name, callerName)
             setText(R.id.notification_call_status, context.getString(contentTextId))
-            setVisibleIf(R.id.notification_accept_call, callState == Call.STATE_RINGING)
+            setVisibleIf(R.id.notification_accept_call, isRinging)
 
             val isCallActiveOrDialing = callState == Call.STATE_ACTIVE ||
                     callState == Call.STATE_DIALING ||
@@ -210,8 +216,10 @@ class CallNotificationManager(private val context: Context) {
             setInt(R.id.notification_toggle_mute, "setColorFilter", muteColor)
             setInt(R.id.notification_toggle_speaker, "setColorFilter", speakerColor)
 
-            setOnClickPendingIntent(R.id.notification_decline_call, declinePendingIntent)
-            setOnClickPendingIntent(R.id.notification_accept_call, acceptPendingIntent)
+            setOnClickPendingIntent(R.id.notification_decline_call, declineOrEndPendingIntent)
+            if (isRinging) {
+                setOnClickPendingIntent(R.id.notification_accept_call, acceptPendingIntent)
+            }
             setOnClickPendingIntent(R.id.notification_toggle_mute, mutePendingIntent)
             setOnClickPendingIntent(R.id.notification_toggle_speaker, speakerPendingIntent)
 
@@ -238,38 +246,86 @@ class CallNotificationManager(private val context: Context) {
             .setCustomContentView(collapsedView)
             .setOngoing(true)
             .setUsesChronometer(callState == Call.STATE_ACTIVE)
+            // Anchor the chronometer to the real connect time so reposts don't restart it.
+            .setShowWhen(callState == Call.STATE_ACTIVE)
+            .apply {
+                val connectTime = targetCall.details?.connectTimeMillis ?: 0L
+                if (callState == Call.STATE_ACTIVE && connectTime > 0L) setWhen(connectTime)
+            }
             .setChannelId(channelId)
             .setStyle(Notification.DecoratedCustomViewStyle())
             .setVisibility(Notification.VISIBILITY_PUBLIC)
 
         if (shouldAttachFsi) {
+            // Marked as sent only when actually posted (see schedulePost): an update that is built but superseded
+            // before posting must not suppress the full-screen intent of the one that is posted.
             builder.setFullScreenIntent(openAppPendingIntent, true)
-            postedFullScreenIntentCallKey = callKey
         }
 
         val notification = builder.build()
         if (token != currentSessionToken) return
-        if (targetCall.getStateCompat() == callState || CallManager.getState() == callState) {
-            val service = context as? Service
-            if (service != null) {
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
-                    service.startForeground(
-                        CALL_NOTIFICATION_ID,
-                        notification,
-                        ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
-                    )
-                } else {
-                    service.startForeground(CALL_NOTIFICATION_ID, notification)
+        if (targetCall.getStateCompat() != callState && CallManager.getState() != callState) return
+
+        val signature = listOf(
+            callKey, callState, channelId, callerName, contentTextId, isMuted, currentRoute,
+            callContactAvatar?.let { System.identityHashCode(it) }, shouldAttachFsi,
+            targetCall.details?.connectTimeMillis
+        ).joinToString("|")
+        schedulePost(notification, signature, token, fullScreenCallKey = if (shouldAttachFsi) callKey else null)
+    }
+
+    /** Posts on the main thread, skipping identical content and spacing updates so none is shed by Android. */
+    private fun schedulePost(notification: Notification, signature: String, token: Long, fullScreenCallKey: String?) {
+        mainHandler.post {
+            if (token != currentSessionToken || signature == lastPostedSignature) return@post
+            pendingPost?.let { mainHandler.removeCallbacks(it) }
+            val post = Runnable {
+                pendingPost = null
+                if (token != currentSessionToken || CallManager.getPhoneState() == NoCall) return@Runnable
+                if (fullScreenCallKey != null) {
+                    if (postedFullScreenIntentCallKey == fullScreenCallKey) {
+                        // Already launched for this ringing call: never repeat it in a later update.
+                        notification.fullScreenIntent = null
+                    } else {
+                        postedFullScreenIntentCallKey = fullScreenCallKey
+                    }
                 }
+                lastPostUptime = SystemClock.uptimeMillis()
+                lastPostedSignature = signature
+                publish(notification)
+            }
+            val wait = MIN_POST_INTERVAL_MS - (SystemClock.uptimeMillis() - lastPostUptime)
+            // The incoming call's full-screen intent (lock screen UI) is never delayed.
+            if (wait <= 0L || (fullScreenCallKey != null && postedFullScreenIntentCallKey != fullScreenCallKey)) {
+                post.run()
             } else {
-                notificationManager.notify(CALL_NOTIFICATION_ID, notification)
+                pendingPost = post
+                mainHandler.postDelayed(post, wait)
             }
         }
     }
 
-    private fun getCallKey(call: Call): String {
-        val handle = call.details?.handle?.toString()?.takeIf { it.isNotEmpty() }
-        return handle ?: call.toString()
+    private fun publish(notification: Notification) {
+        val service = context as? Service
+        if (service != null) {
+            if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
+                service.startForeground(
+                    CALL_NOTIFICATION_ID,
+                    notification,
+                    ServiceInfo.FOREGROUND_SERVICE_TYPE_PHONE_CALL
+                )
+            } else {
+                service.startForeground(CALL_NOTIFICATION_ID, notification)
+            }
+        } else {
+            notificationManager.notify(CALL_NOTIFICATION_ID, notification)
+        }
+    }
+
+    /** Re-posts even if nothing changed (e.g. after the user swiped the ongoing-call notification away). */
+    fun repostNotification() {
+        mainHandler.post { lastPostedSignature = null }
+        setupNotification()
     }
 
     fun createNotificationChannel(isHighPriority: Boolean, channelId: String) {
@@ -290,6 +346,9 @@ class CallNotificationManager(private val context: Context) {
 
     fun cancelNotification() {
         currentSessionToken++
+        pendingPost?.let { mainHandler.removeCallbacks(it) }
+        pendingPost = null
+        lastPostedSignature = null
         lastPostedCallHandle = null
         lastPostedContact = null
         lastPostedAvatar = null

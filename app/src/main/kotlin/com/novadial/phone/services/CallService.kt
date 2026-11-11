@@ -160,6 +160,11 @@ class CallService : InCallService() {
         }
     }
 
+    /** Re-posts the call notification for the current call state (used by notification actions). */
+    fun refreshCallNotification() {
+        callNotificationManager.repostNotification()
+    }
+
     override fun onDestroy() {
         super.onDestroy()
         CallManager.removeListener(callManagerListener)

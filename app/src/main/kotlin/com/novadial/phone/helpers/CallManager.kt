@@ -42,7 +42,7 @@ class CallManager {
                     updateState()
                 }
 
-                override fun onParentChanged(call: Call, parent: Call) {
+                override fun onParentChanged(call: Call, parent: Call?) {
                     updateState()
                 }
             })
