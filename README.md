@@ -62,6 +62,7 @@ NovaDial brings together:
 -  In-call experience
 -  QR and contact sharing
 -  Customization options
+-  Call Recording 
 
 All in one application.
 
@@ -77,6 +78,7 @@ All in one application.
 - Direct calling from contacts and recent calls
 - Clean and modern dialer interface
 - Offline-first experience
+- 
 
 ### Contacts
 
@@ -115,6 +117,40 @@ NovaDial is designed with privacy in mind.
 - No unnecessary cloud dependency
 - Your contacts remain on your device unless you choose to share or
   export them
+
+### Call Recording
+
+- Integrated call recording powered by Shizuku
+- Start and stop recordings directly during calls
+- View recording status and elapsed time
+- Browse, play, share, and delete recordings
+- No need to install a separate call recording application
+
+<details>
+    
+<summary><strong>Call Recording Setup – Click here to get started</strong></summary>
+<br>
+
+Requirements
+
+- Install Shizuk - https://github.com/thedjchi/Shizuku
+- Install NovaDial.
+
+Setup Instructions
+1. Open Shizuku and follow its instructions to start the service.
+2. Scroll Down Shizuku look for **View Intents** copy the **auth ID**:
+3. Open NovaDial Settings.
+4. open Configure Call Recording Enable Call Recording and **Acknowledgement** 
+5. paste the **AUTH ID** and authorize 
+6. Start or stop recording directly from the in-call screen.
+
+Managing Recordings
+
+Open the Call Recording History in NovaDial to browse, play, share, or delete your recordings.
+
+Note: Call recording compatibility varies depending on your device and Android version. Please follow your local laws and obtain consent where required.
+
+</details>
 
 ---
 
