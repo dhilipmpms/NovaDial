@@ -4,7 +4,7 @@ junit = "4.13.2"
 robolectric = "4.16"
 androidxTestCore = "1.6.1"
 #jetbrains
-geocoderVersion = "3.35"
+geocoderVersion = "3.41"
 kotlin = "2.4.10"
 kotlinxSerializationJson = "1.11.0"
 #Detekt
