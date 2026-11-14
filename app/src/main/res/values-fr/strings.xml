@@ -77,4 +77,23 @@
     <string name="call_notification_channel_high_priority">Statut d\'appel (haute priorité)</string>
     <string name="call_notification_channel">Statut d\'appel</string>
     <string name="calling_accounts">Comptes d\'appel</string>
+    <string name="contact_details">Détails du contact</string>
+    <string name="no_phone_number_found">Aucun numéro trouvé</string>
+    <string name="phone_number">Numéro de téléphone</string>
+    <string name="phone_numbers">Numéros de téléphone</string>
+    <string name="call_history">Historique des appels</string>
+    <string name="total">Total</string>
+    <string name="call_stats_labels">Total des appels entrants et sortants manqués</string>
+    <string name="incoming">Entrants</string>
+    <string name="outgoing">Sortants</string>
+    <string name="missed">Manqués</string>
+    <string name="message">Message</string>
+    <string name="video_call">Appel vidéo</string>
+    <string name="total_call_duration">Durée totale</string>
+    <string name="no_video_call_app">Aucune application d\'appel vidéo trouvée</string>
+    <string name="rejected">Rejeté</string>
+    <string name="blocked">Bloqué</string>
+    <string name="no_blocked_numbers_found">Aucun numéro bloqué</string>
+    <string name="unblock_number_confirmation">Confirmer le déblocage de %s ?</string>
+    <string name="add_a_blocked_number">Ajouter un numéro bloqué</string>
 </resources>
