@@ -78,7 +78,7 @@ All in one application.
 - Direct calling from contacts and recent calls
 - Clean and modern dialer interface
 - Offline-first experience
-- 
+
 
 ### Contacts
 

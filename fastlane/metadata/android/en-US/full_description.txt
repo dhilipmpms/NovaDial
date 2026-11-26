@@ -1,7 +1,6 @@
 📞 SMARTER CALLING, DESIGNED FOR CLARITY
 
-NovaDial is a privacy-focused phone application built for users who want a clean, reliable, and efficient calling experience. Based on Fossify Phone and developed as an independent fork, NovaDial introduces significant improvements to call management, usability, and performance while remaining completely free and open source.
-
+NovaDial is a privacy-focused Android phone application built for users who want a clean, reliable, and efficient calling experience. Based on Fossify Phone and developed as an independent fork, NovaDial enhances the original experience with improved call management, usability, performance, and **Shizuku-based call recording support** while remaining completely free and open source.
 🔒 PRIVACY FIRST
 
 Your phone app should work for you, not track you. NovaDial contains no ads, no trackers, no purchases, and no unnecessary data collection. Your call history, contacts, and communication remain under your control.
@@ -21,6 +20,26 @@ Benefits include:
 • Complete call history available when needed
 
 Instead of displaying hundreds of repeated entries from the same caller in the main recent calls view, NovaDial shows a concise overview of your communication history. Detailed call records remain accessible through the dedicated call details screen.
+
+🎙️ CALL RECORDING
+
+NovaDial introduces call recording support through Shizuku integration, allowing users to record phone conversations on supported devices.
+
+Features include:
+
+• Shizuku-based call recording
+• Integration with the Shizuku Call Recorder implementation
+• Recording support depends on Android version and device compatibility
+
+**F-Droid builds:**
+The required `scrcpy-server` binary needs to be imported separately. Don't worry about complicated manual setup! You can download and import the required binary directly from within NovaDial using its built-in import option.
+
+**GitHub builds:**
+The required `scrcpy-server` binary is already bundled with the APK, so no separate download or import is necessary.
+
+Shizuku setup is required to use call recording. Availability may vary depending on the device, Android version, and manufacturer restrictions.
+
+Please respect applicable call-recording consent and privacy laws.
 
 🎨 MODERN AND USER-FRIENDLY DESIGN
 
