@@ -80,6 +80,8 @@ object CallRecordingManager {
         SHIZUKU_DISCONNECTED,
         START_TIMEOUT,
         RECORDER_FILES_UNAVAILABLE,
+        /** scrcpy-server is not bundled (core build) and no verified file was imported. */
+        SERVER_MISSING,
         CAPTURE_FAILED,
         NO_AUDIO_CAPTURED,
     }
@@ -225,6 +227,19 @@ object CallRecordingManager {
         var serverStartedWithKey: String? = null
 
         try {
+            // Checked first at every start, so a missing server is reported before Shizuku is started.
+            val serverPath = try {
+                ScrcpyConfig.getServerPath(context)
+            } catch (e: IllegalStateException) {
+                RecorderLog.w("No storage for scrcpy-server: ${e.message}")
+                failure = Error.RECORDER_FILES_UNAVAILABLE
+                return
+            }
+            if (!ServerExtractor.ensureServerFile(context, serverPath)) {
+                failure = if (ServerExtractor.hasBundledAsset(context)) Error.RECORDER_FILES_UNAVAILABLE else Error.SERVER_MISSING
+                return
+            }
+
             if (!ShizukuConnectionManager.isInstalled(context) && !ShizukuConnectionManager.isAvailable()) {
                 failure = Error.SHIZUKU_NOT_INSTALLED
                 return
@@ -268,12 +283,6 @@ object CallRecordingManager {
             }
             synchronized(lock) { shellService = service }
             if (isStopRequested()) return
-
-            val serverPath = ScrcpyConfig.getServerPath(context)
-            if (!ServerExtractor.ensureServerFile(context, serverPath)) {
-                failure = Error.RECORDER_FILES_UNAVAILABLE
-                return
-            }
 
             pipe = try {
                 service.startRecording(SOURCE.cliKey, CODEC.cliKey, BIT_RATE, serverPath)

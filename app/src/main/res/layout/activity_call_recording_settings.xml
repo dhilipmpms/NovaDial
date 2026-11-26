@@ -64,6 +64,10 @@
                 android:id="@+id/status_enabled"
                 layout="@layout/item_recording_status" />
 
+            <include
+                android:id="@+id/status_server"
+                layout="@layout/item_recording_status" />
+
             <RelativeLayout
                 android:id="@+id/recording_settings_grant_permission_holder"
                 style="@style/SettingsHolderTextViewStyle"

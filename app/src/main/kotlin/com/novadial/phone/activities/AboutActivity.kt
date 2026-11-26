@@ -149,7 +149,17 @@ class AboutActivity : BaseComposeActivity() {
                                 launchViewIntent("https://github.com/kitsumed/ShizuCallRecorder")
                             },
                             text = "ShizuCallRecorder by kitsumed",
-                            description = "NovaDial's call recording is based on ShizuCallRecorder, available at https://github.com/kitsumed/ShizuCallRecorder (GPL-3.0)",
+                            description = "NovaDial's call recording approach (running scrcpy-server through Shizuku) is based on ShizuCallRecorder, available at https://github.com/kitsumed/ShizuCallRecorder (GPL-3.0 with additional terms)",
+                            icon = R.drawable.ic_github_vector
+                        )
+
+                        SettingsListItem(
+                            tint = SimpleTheme.colorScheme.onSurface,
+                            click = {
+                                launchViewIntent("https://github.com/Genymobile/scrcpy")
+                            },
+                            text = "scrcpy by Genymobile",
+                            description = "Call audio is captured with scrcpy-server v${BuildConfig.SCRCPY_VERSION}, part of scrcpy (Apache-2.0), https://github.com/Genymobile/scrcpy",
                             icon = R.drawable.ic_github_vector
                         )
 

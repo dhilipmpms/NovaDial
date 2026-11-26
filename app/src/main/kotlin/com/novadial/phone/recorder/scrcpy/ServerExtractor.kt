@@ -1,137 +1,204 @@
 /*
- * ShizuCallRecorder: FOSS Call recording powered through ADB/Shizuku!
- *  Copyright (C) 2026-present kitsumed (Med)
- *  This software is licensed under the GNU General Public License v3 or later, with additional terms as permitted under Section 7.
- *  The full license text is available in the LICENSE file at the root of this project.
- *  Modified for NovaDial (2026-11-11): package name, logger and BuildConfig references only.
- *  Taken from ShizuCallRecorder before its scrcpy removal (commit d292812).
- *  This software is distributed WITHOUT ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.
+ * NovaDial
+ * Copyright (C) 2026 NovaDial contributors
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
+ * Original NovaDial code. scrcpy-server itself is a prebuilt binary of scrcpy (Genymobile, Apache-2.0);
+ * see NOTICE.
  */
 
 package com.novadial.phone.recorder.scrcpy
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.net.Uri
+import androidx.annotation.VisibleForTesting
 import androidx.annotation.WorkerThread
 import com.novadial.phone.BuildConfig
-import com.novadial.phone.recorder.RecorderLog as AppLogger
+import com.novadial.phone.recorder.RecorderLog
 import java.io.File
-import java.io.FileOutputStream
+import java.io.IOException
 import java.io.InputStream
 import java.security.MessageDigest
 
 /**
- * ServerExtractor extracts the bundled scrcpy-server.jar from the APK's assets folder and
- * writes it to shared storage so the privileged shell process can read and execute it.
+ * Provides the scrcpy-server file that the shell process (UID 2000) runs for call recording.
+ *
+ * The file always lives at [ScrcpyConfig.getServerPath] and is only trusted when its SHA-256 matches
+ * [BuildConfig.SCRCPY_SERVER_SHA256] (the scrcpy-server version in [BuildConfig.SCRCPY_VERSION]). It comes from one of two places:
+ *  - the APK asset, in builds that bundle it (BuildConfig.SCRCPY_BUNDLED: foss, gplay);
+ *  - a file the user imports through the system file picker ([importFromUri]), in the core (F-Droid)
+ *    build, which ships no prebuilt binary.
+ *
+ * Every function here does file I/O and hashing: call them off the main thread.
  */
 object ServerExtractor {
-    /**
-     * Ensures the scrcpy-server JAR exists at [serverPath] and has the expected SHA-256 hash.
-     *
-     * If the file is absent or its hash does not match, it is extracted from the APK's assets.
-     * After extraction the hash is verified again to confirm.
-     *
-     * @param context    The app context (used to open the assets stream and resolve paths).
-     * @param serverPath The absolute destination path for the JAR file.
-     * @return true if the file exists and is verified; false if extraction or verification fails.
-     */
-    @WorkerThread // Performs file I/O and hashing, should not be called on the main thread.
-    fun ensureServerFile(context: Context, serverPath: String): Boolean {
-        val file = File(serverPath)
-        if (file.exists() && verifyServerHash(file)) {
-            AppLogger.d( "Server file already present and verified at $serverPath")
-            return true
-        }
-        AppLogger.d( "Server file absent or hash mismatch, extracting from assets...")
-        return extractFromAssets(context, file)
+
+    /** Upper bound for an imported file. scrcpy-server is about 720 KiB; anything this big is not it. */
+    private const val MAX_SERVER_SIZE_BYTES = 8L * 1024 * 1024
+
+    private const val BUFFER_SIZE = 8 * 1024
+
+    sealed class ImportResult {
+        /** The file matched the expected hash and is now in place. */
+        data object Success : ImportResult()
+
+        /** The file was read completely but is not the expected scrcpy-server (wrong file, version or truncated). */
+        data class HashMismatch(val actualSha256: String) : ImportResult()
+
+        /** The file could not be read or written. Nothing was changed. */
+        data class Error(val cause: Throwable) : ImportResult()
     }
 
-    /**
-     * Copies the server asset from the APK to the destination file, then verifies its hash.
-     *
-     * @param context  App context used to open assets.
-     * @param destFile The [File] object to write to.
-     * @return true if the file was written and its hash verified; false on any error.
-     */
-    private fun extractFromAssets(context: Context, destFile: File): Boolean {
+    /** True if this APK contains the scrcpy-server asset. */
+    @WorkerThread
+    fun hasBundledAsset(context: Context): Boolean {
+        if (!BuildConfig.SCRCPY_BUNDLED) return false
         return try {
-            // .use{} guarantees the asset InputStream is closed even if writeFile throws.
-            // Android's low-level file descriptors are NOT garbage-collected automatically;
-            // failing to close them leaks native FD handles.
-            context.assets.open(BuildConfig.SCRCPY_SERVER_ASSET_NAME).use { inputStream ->
-                writeFile(destFile, inputStream)
-            }
-            val verified = verifyServerHash(destFile)
-            if (verified) {
-                AppLogger.d( "Server extracted and verified: ${destFile.path}")
-            } else {
-                AppLogger.w( "Server extraction succeeded but hash verification FAILED")
-            }
-            verified
-        } catch (e: Exception) {
-            AppLogger.w( "Asset extraction failed: ${e.message}")
+            context.assets.open(BuildConfig.SCRCPY_SERVER_ASSET_NAME).close()
+            true
+        } catch (_: IOException) {
             false
         }
     }
 
     /**
-     * Writes the contents of [input] to [destFile], creating parent directories as needed.
-     * Sets the file world-readable so the shell process (UID 2000) can open it.
-     *
-     * @param destFile The destination [File] to create or overwrite.
-     * @param input    The [java.io.InputStream] to read from (must be open; this function does not close it).
+     * True if recording can get a verified server: either a verified file is already in place, or the
+     * APK bundles one that [ensureServerFile] can extract.
      */
-    @SuppressLint("SetWorldReadable")
-    private fun writeFile(destFile: File, input: InputStream) {
-        destFile.parentFile?.mkdirs()
-        // FileOutputStream.use{} closes the output stream even if an IOException occurs mid-write.
-        FileOutputStream(destFile).use { output ->
-            val buffer = ByteArray(8 * 1024) // 8 KB copy buffer
-            var bytesRead = input.read(buffer)
-            while (bytesRead > 0) {
-                output.write(buffer, 0, bytesRead)
-                bytesRead = input.read(buffer)
-            }
-        }
-        // Make the file readable by all users (including the shell, UID 2000).
-        destFile.setReadable(true, false)
+    @WorkerThread
+    fun isServerAvailable(context: Context): Boolean {
+        val path = runCatching { ScrcpyConfig.getServerPath(context) }.getOrNull()
+        if (path != null && verifyServerHash(File(path))) return true
+        return hasBundledAsset(context)
     }
 
     /**
-     * Computes the SHA-256 hash of [file] and compares it to [ScrcpyConfig.EXPECTED_SERVER_SHA256].
+     * Makes sure a verified server file is at [serverPath]. If the file is missing or does not verify,
+     * it is extracted from the bundled asset when there is one.
      *
-     * @param file The [File] whose hash will be computed.
-     * @return true if the file's SHA-256 matches the expected value (case-insensitive); false otherwise.
+     * @return true when [serverPath] holds a verified server; false otherwise (core build without an
+     * imported file, or storage errors).
      */
-    fun verifyServerHash(file: File): Boolean {
-        if (!file.exists()) {
-            AppLogger.e( "Cannot verify: file not found at ${file.path}")
+    @WorkerThread
+    fun ensureServerFile(context: Context, serverPath: String): Boolean {
+        val target = File(serverPath)
+        if (verifyServerHash(target)) return true
+        if (!hasBundledAsset(context)) {
+            RecorderLog.w("scrcpy-server is missing or invalid and this build does not bundle it")
             return false
         }
+        val result = try {
+            context.assets.open(BuildConfig.SCRCPY_SERVER_ASSET_NAME).use { input -> installVerified(input, target) }
+        } catch (e: IOException) {
+            ImportResult.Error(e)
+        }
+        if (result != ImportResult.Success) RecorderLog.w("Extracting the bundled scrcpy-server failed: $result")
+        return result == ImportResult.Success
+    }
 
+    /**
+     * Imports a user-selected file (from ACTION_OPEN_DOCUMENT) as the scrcpy-server. The content is
+     * copied to a temporary file while it is hashed; it replaces the server file only if the hash
+     * matches, so a wrong file never overwrites a good one.
+     */
+    @WorkerThread
+    fun importFromUri(context: Context, uri: Uri): ImportResult =
+        importFromUri(context, uri, BuildConfig.SCRCPY_SERVER_SHA256)
+
+    @VisibleForTesting
+    internal fun importFromUri(context: Context, uri: Uri, expectedSha256: String): ImportResult {
         return try {
-            val digest = MessageDigest.getInstance("SHA-256")
-            // Read the file in chunks to avoid loading the entire JAR into memory at once.
-            file.inputStream().use { inputStream ->
-                val buffer = ByteArray(8192)
-                var bytesRead: Int
-                // .also{ bytesRead = it } assigns the return value of read() to bytesRead
-                // AND returns it, allowing it to be used as the while-loop condition.
-                while (inputStream.read(buffer).also { bytesRead = it } != -1) {
-                    digest.update(buffer, 0, bytesRead)
-                }
-            }
-
-            // Convert the raw digest bytes to a lowercase hex string.
-            val actualHash = digest.digest().joinToString("") { byte -> "%02x".format(byte) }
-            val matches = actualHash.equals(ScrcpyConfig.EXPECTED_SERVER_SHA256, ignoreCase = true)
-            if (!matches) {
-                AppLogger.w( "SHA-256 mismatch: expected=${ScrcpyConfig.EXPECTED_SERVER_SHA256} actual=$actualHash")
-            }
-            matches
+            val target = File(ScrcpyConfig.getServerPath(context))
+            val input = context.contentResolver.openInputStream(uri)
+                ?: return ImportResult.Error(IOException("Cannot open $uri"))
+            input.use { installVerified(it, target, expectedSha256) }
         } catch (e: Exception) {
-            AppLogger.e( "Hash verification error: ${e.message}", e)
+            // SecurityException (revoked grant), FileNotFoundException, IllegalStateException (no storage)...
+            ImportResult.Error(e)
+        }.also { RecorderLog.i("scrcpy-server import: ${it::class.simpleName}") }
+    }
+
+    /** True if [file] exists and its SHA-256 is the expected scrcpy-server hash. */
+    fun verifyServerHash(file: File): Boolean = verifyHash(file, BuildConfig.SCRCPY_SERVER_SHA256)
+
+    @VisibleForTesting
+    internal fun verifyHash(file: File, expectedSha256: String): Boolean {
+        if (!file.isFile) return false
+        return try {
+            val actual = file.inputStream().use { sha256Hex(it) }
+            actual.equals(expectedSha256, ignoreCase = true).also { matches ->
+                if (!matches) RecorderLog.w("scrcpy-server hash mismatch at ${file.path}: $actual")
+            }
+        } catch (e: IOException) {
+            RecorderLog.w("Cannot hash ${file.path}: ${e.message}")
             false
         }
     }
+
+    /**
+     * Streams [input] into "[target].tmp" while hashing it, then moves it to [target] only when the hash
+     * equals [expectedSha256]. The temporary file is always removed on failure. Does not close [input].
+     */
+    @VisibleForTesting
+    @SuppressLint("SetWorldReadable")
+    internal fun installVerified(
+        input: InputStream,
+        target: File,
+        expectedSha256: String = BuildConfig.SCRCPY_SERVER_SHA256,
+    ): ImportResult {
+        val tmp = File(target.path + ".tmp")
+        try {
+            target.parentFile?.mkdirs()
+            val digest = MessageDigest.getInstance("SHA-256")
+            var total = 0L
+            tmp.outputStream().use { output ->
+                val buffer = ByteArray(BUFFER_SIZE)
+                while (true) {
+                    val read = input.read(buffer)
+                    if (read < 0) break
+                    total += read
+                    if (total > MAX_SERVER_SIZE_BYTES) {
+                        tmp.delete()
+                        return ImportResult.HashMismatch("")
+                    }
+                    digest.update(buffer, 0, read)
+                    output.write(buffer, 0, read)
+                }
+                output.fd.sync()
+            }
+
+            val actual = digest.digest().toHex()
+            if (!actual.equals(expectedSha256, ignoreCase = true)) {
+                tmp.delete()
+                return ImportResult.HashMismatch(actual)
+            }
+
+            // The shell process (UID 2000) runs the file, so it must be readable by others.
+            tmp.setReadable(true, false)
+            if (!tmp.renameTo(target)) {
+                // rename(2) replaces an existing file on Android; this is only a fallback.
+                target.delete()
+                if (!tmp.renameTo(target)) throw IOException("Cannot move ${tmp.path} to ${target.path}")
+            }
+            target.setReadable(true, false)
+            return ImportResult.Success
+        } catch (e: Exception) {
+            tmp.delete()
+            return ImportResult.Error(e)
+        }
+    }
+
+    private fun sha256Hex(input: InputStream): String {
+        val digest = MessageDigest.getInstance("SHA-256")
+        val buffer = ByteArray(BUFFER_SIZE)
+        while (true) {
+            val read = input.read(buffer)
+            if (read < 0) break
+            digest.update(buffer, 0, read)
+        }
+        return digest.digest().toHex()
+    }
+
+    private fun ByteArray.toHex(): String = joinToString("") { "%02x".format(it) }
 }

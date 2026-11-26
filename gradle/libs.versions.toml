@@ -22,11 +22,13 @@ ezvcard = "0.12.2"
 indicatorFastScroll = "c7873f7168"
 autofitTextView = "0.2.1"
 libphonenumberVersion = "9.0.35"
-#Call recording (Shizuku API + scrcpy-server binary downloaded at build time)
+#Call recording (Shizuku API + scrcpy-server binary: downloaded at build time for foss/gplay only, never for core)
 shizuku = "13.1.5"
-# scrcpy MUST stay 4.0: ScrcpyClient parses the binary protocol of this exact version.
+# scrcpy: keep on the latest release. The server refuses a client whose version string differs, so the
+# imported/bundled file must be exactly this version. Before bumping, check that the audio protocol is
+# unchanged (see ScrcpyClient) and update scrcpyServerSha256 in app/build.gradle.kts.
 # When changing it, also update scrcpyServerSha256 in app/build.gradle.kts.
-scrcpy = "4.0"
+scrcpy = "5.0.1"
 #build
 app-build-compileSDKVersion = "36"
 app-build-targetSDK = "36"

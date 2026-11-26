@@ -211,6 +211,19 @@
     <string name="call_recording_error_shizuku_disconnected">The connection to Shizuku was lost. The recording was stopped and saved.</string>
     <string name="call_recording_error_timeout">Shizuku did not respond in time. Please try again.</string>
     <string name="call_recording_error_files">The recorder components could not be prepared (storage unavailable)</string>
+    <string name="call_recording_error_server_missing">scrcpy-server is missing, so the call cannot be recorded. Import it in Settings → Call recording.</string>
+    <!-- scrcpy-server import (core / F-Droid build). "scrcpy-server" and "F-Droid" are names: don't translate. -->
+    <string name="call_recording_server_missing_title">scrcpy-server missing</string>
+    <string name="call_recording_server_missing_message">Call recording needs scrcpy-server v%1$s.
+
+It is not bundled in this build because F-Droid rules do not allow prebuilt binaries.
+
+Tap Download to open the official scrcpy v%1$s release page and download the file named scrcpy-server-v%1$s. Then come back, tap Import and select the downloaded file. NovaDial checks the file before using it.</string>
+    <string name="call_recording_server_download">Download</string>
+    <string name="call_recording_server_import">Import</string>
+    <string name="call_recording_server_import_success">scrcpy-server imported and verified. Call recording is ready.</string>
+    <string name="call_recording_server_import_mismatch">Wrong file or version: scrcpy-server v%1$s is required</string>
+    <string name="call_recording_server_import_error">The file could not be imported: %1$s</string>
     <string name="call_recording_error_capture_failed">Recording failed. Your device may not allow capturing call audio.</string>
     <string name="call_recording_error_no_audio">No call audio was captured. Your device may not support call recording.</string>
 
@@ -223,6 +236,7 @@
     <string name="call_recording_status_authorized">NovaDial authorized</string>
     <string name="call_recording_status_key">Authorization key</string>
     <string name="call_recording_status_enabled">Call recording</string>
+    <string name="call_recording_status_server">scrcpy-server</string>
     <string name="call_recording_value_yes">Installed</string>
     <string name="call_recording_value_not_installed">Not installed</string>
     <string name="call_recording_value_running">Running</string>
@@ -238,6 +252,9 @@
     <string name="call_recording_value_not_set">Not set</string>
     <string name="call_recording_value_on">On</string>
     <string name="call_recording_value_off">Off</string>
+    <string name="call_recording_value_server_bundled">Included</string>
+    <string name="call_recording_value_server_imported">Imported and verified</string>
+    <string name="call_recording_value_server_missing">Missing. Tap to import.</string>
     <string name="call_recording_grant_permission">Authorize NovaDial in Shizuku</string>
     <string name="call_recording_grant_permission_summary">Required to record calls</string>
 
