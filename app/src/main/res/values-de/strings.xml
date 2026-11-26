@@ -77,4 +77,24 @@
     <string name="call_notification_channel">Anrufstatus</string>
     <string name="call_notification_channel_high_priority">Anrufstatus (hohe Priorität)</string>
     <string name="calling_accounts">Anrufkonten</string>
+    <string name="contact_details">Kontaktdetails</string>
+    <string name="no_phone_number_found">Keine Telefonnummer gefunden</string>
+    <string name="phone_number">Telefonnummer</string>
+    <string name="phone_numbers">Telefonnummern</string>
+    <string name="call_history">Anrufhistorie</string>
+    <string name="total">Gesamt</string>
+    <string name="call_stats_labels">Gesamt Eingehend Ausgehend Verpasst</string>
+    <string name="incoming">Eingehend</string>
+    <string name="outgoing">Ausgehend</string>
+    <string name="missed">Verpasst</string>
+    <string name="message">Nachricht</string>
+    <string name="video_call">Videoanruf</string>
+    <string name="total_call_duration">Gesamtdauer</string>
+    <string name="no_video_call_app">Keine App für Video-Anrufe gefunden</string>
+    <string name="rejected">Abgelehnt</string>
+    <string name="blocked">Blockiert</string>
+    <string name="no_blocked_numbers_found">Keine blockierten Nummern gefunden</string>
+    <string name="unblock_number_confirmation">Bist du sicher, dass du %s nicht mehr blockieren willst?</string>
+    <string name="add_a_blocked_number">Eine blockierte Nummer hinzufügen</string>
+    <string name="call">Anruf</string>
 </resources>
