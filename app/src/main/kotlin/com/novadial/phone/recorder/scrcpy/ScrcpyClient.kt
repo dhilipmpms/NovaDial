@@ -24,7 +24,7 @@ import java.io.FileInputStream
  * Stream connection header (once):
  *  - 4 bytes: Codec FourCC (e.g. "opus" 0x6F707573)
  *
- * Scrcpy v4.0 Frame Header (12 bytes per packet):
+ * Scrcpy Frame Header, unchanged from v4.0 to v5.0.1 (12 bytes per packet):
  *
  *     [. . . . . . . .|. . . .]. . . . . . . . . . . . . . . ...
  *      <-------------> <-----> <-----------------------------...

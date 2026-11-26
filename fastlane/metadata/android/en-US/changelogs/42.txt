@@ -1,0 +1,4 @@
+• F-Droid build no longer includes the prebuilt scrcpy-server. To record calls, download scrcpy-server v5.0.1 from the official scrcpy release and import it in Settings → Call recording. NovaDial verifies the file before using it.
+• scrcpy-server updated to v5.0.1.
+• The GitHub "-bundled" APK still includes scrcpy-server.
+• Credits for scrcpy (Genymobile, Apache-2.0) and ShizuCallRecorder in About.

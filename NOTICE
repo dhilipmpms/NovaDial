@@ -1,0 +1,40 @@
+NovaDial
+Copyright (C) NovaDial contributors
+Licensed under the GNU General Public License v3.0 or later (see LICENSE).
+
+NovaDial is a fork of Fossify Phone (https://github.com/FossifyOrg/Phone), GPL-3.0.
+
+This product includes or uses the following third-party work.
+
+--------------------------------------------------------------------------------
+scrcpy / scrcpy-server
+https://github.com/Genymobile/scrcpy
+Copyright (C) Genymobile and Romain Vimont (see the scrcpy LICENSE file)
+Licensed under the Apache License, Version 2.0
+(https://www.apache.org/licenses/LICENSE-2.0)
+
+Call recording runs the unmodified scrcpy-server v5.0.1 binary, which is verified
+by SHA-256 before use:
+  764eb6f79811d5211fe9df341120882ba9994c7a61b897d7bf3fb662e53bc536
+  - "core" build (F-Droid): scrcpy-server is NOT included. The user downloads it
+    from the official scrcpy release and imports it in the app.
+  - "foss" build (GitHub "-bundled" APK) and "gplay" build: scrcpy-server is
+    included as the asset "scrcpy-server", downloaded from
+    https://github.com/Genymobile/scrcpy/releases/tag/v5.0.1 at build time.
+
+--------------------------------------------------------------------------------
+ShizuCallRecorder
+https://github.com/kitsumed/ShizuCallRecorder
+Copyright (C) 2026-present kitsumed (Med)
+Licensed under the GNU General Public License v3.0 or later, with additional
+terms as permitted under Section 7 (see the ShizuCallRecorder LICENSE file).
+
+NovaDial's approach to call recording (running scrcpy-server in the shell
+process through Shizuku and muxing its audio stream) comes from
+ShizuCallRecorder. Files adapted from it keep their original copyright header,
+under app/src/main/kotlin/com/novadial/phone/recorder/.
+
+--------------------------------------------------------------------------------
+Shizuku(This is Fork )
+https://github.com/thedjchi/Shizuku
+Licensed under the Apache License, Version 2.0.

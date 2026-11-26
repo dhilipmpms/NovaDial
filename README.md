@@ -207,11 +207,15 @@ Debug build:
 ./gradlew assembleCoreDebug
 ```
 
-Release build:
+Release builds:
 
-```bash
-./gradlew assembleCoreRelease
-```
+| Command | Flavor | scrcpy-server | Output | Publish as |
+| --- | --- | --- | --- | --- |
+| `./gradlew assembleCoreRelease` | core (F-Droid) | not included, never downloaded | `app/build/outputs/apk/core/release/phone-<versionCode>-core-release.apk` | `NovaDial-v<version>.apk` |
+| `./gradlew assembleFossRelease` | foss (GitHub) | downloaded at build time, SHA-256 checked, bundled | `app/build/outputs/apk/foss/release/phone-<versionCode>-foss-release.apk` | `NovaDial-v<version>-bundled.apk` |
+
+The core build makes no network request for scrcpy. Users of the core build import scrcpy-server (version shown in the app)
+themselves (Settings → Call recording); the app checks its SHA-256 before using it. See [NOTICE](NOTICE).
 
 Generated APKs can be found in:
 

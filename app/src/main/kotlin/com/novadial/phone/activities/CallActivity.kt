@@ -76,6 +76,9 @@ class CallActivity : SimpleActivity() {
 
     private val binding by viewBinding(ActivityCallBinding::inflate)
 
+    // Registered at construction time (activity result launcher) for the scrcpy-server import in the core build.
+    private val scrcpyServerImporter = ScrcpyServerImporter(this)
+
     // ── Audio + ViewModel ────────────────────────────────────────────────────
     private val callAudioManager by lazy { CallAudioManager(this) }
     private val callScreenViewModel: CallScreenViewModel by viewModels()
@@ -146,7 +149,16 @@ class CallActivity : SimpleActivity() {
         lifecycleScope.launch {
             repeatOnLifecycle(Lifecycle.State.STARTED) {
                 launch { CallRecordingManager.state.collect { updateRecordingButton(it) } }
-                launch { CallRecordingManager.errors.collect { toast(getRecordingErrorMessage(it), Toast.LENGTH_LONG) } }
+                launch {
+                    CallRecordingManager.errors.collect {
+                        if (it == CallRecordingManager.Error.SERVER_MISSING) {
+                            // Core (F-Droid) build without an imported server: explain and offer Download / Import.
+                            scrcpyServerImporter.showMissingDialog()
+                        } else {
+                            toast(getRecordingErrorMessage(it), Toast.LENGTH_LONG)
+                        }
+                    }
+                }
                 // Confirmations come from the recorder itself: "started" only once audio capture is running.
                 launch {
                     CallRecordingManager.events.collect { event ->
@@ -1481,6 +1493,7 @@ class CallActivity : SimpleActivity() {
         CallRecordingManager.Error.SHIZUKU_DISCONNECTED -> R.string.call_recording_error_shizuku_disconnected
         CallRecordingManager.Error.START_TIMEOUT -> R.string.call_recording_error_timeout
         CallRecordingManager.Error.RECORDER_FILES_UNAVAILABLE -> R.string.call_recording_error_files
+        CallRecordingManager.Error.SERVER_MISSING -> R.string.call_recording_error_server_missing
         CallRecordingManager.Error.CAPTURE_FAILED -> R.string.call_recording_error_capture_failed
         CallRecordingManager.Error.NO_AUDIO_CAPTURED -> R.string.call_recording_error_no_audio
     }

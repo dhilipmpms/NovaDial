@@ -13,12 +13,20 @@ plugins {
 }
 
 // --- scrcpy-server (call recording) ---
-// Downloaded and SHA-256 verified at build time, then bundled as an asset, as done by
-// ShizuCallRecorder (kitsumed, GPL-3.0). scrcpy is Apache-2.0 (Genymobile).
-// The version is pinned in libs.versions.toml and MUST stay 4.0 (see ScrcpyClient).
+// scrcpy-server is a prebuilt binary from scrcpy (Genymobile, Apache-2.0). The approach of running it
+// through Shizuku comes from ShizuCallRecorder (kitsumed, GPL-3.0 with additional terms). See NOTICE.
+//
+// Per flavor:
+//  - core  (F-Droid): NOT bundled and NEVER downloaded. downloadScrcpyServer is not part of any core
+//                     task graph, so the build makes no network request. The user imports the file at
+//                     runtime; the app checks it against SCRCPY_SERVER_SHA256 before using it.
+//  - foss  (GitHub "bundled" APK) and gplay: downloaded once, SHA-256 verified, bundled as an asset.
+// BuildConfig.SCRCPY_BUNDLED tells the app which case applies.
+// The version is pinned in libs.versions.toml (latest scrcpy release) together with its SHA-256 below,
+// taken from the release's SHA256SUMS.txt. Bump both together when scrcpy releases a new version.
 val scrcpyVersion = libs.versions.scrcpy.get()
 val scrcpyServerUrl = "https://github.com/Genymobile/scrcpy/releases/download/v$scrcpyVersion/scrcpy-server-v$scrcpyVersion"
-val scrcpyServerSha256 = "84924bd564a1eb6089c872c7521f968058977f91f5ff02514a8c74aff3210f3a"
+val scrcpyServerSha256 = "764eb6f79811d5211fe9df341120882ba9994c7a61b897d7bf3fb662e53bc536"
 val scrcpyServerAssetName = "scrcpy-server"
 val scrcpyDownloadDir = layout.buildDirectory.dir("generated/scrcpy/assets")
 
@@ -109,6 +117,7 @@ android {
         buildConfigField("String", "SCRCPY_VERSION", "\"$scrcpyVersion\"")
         buildConfigField("String", "SCRCPY_SERVER_SHA256", "\"$scrcpyServerSha256\"")
         buildConfigField("String", "SCRCPY_SERVER_ASSET_NAME", "\"$scrcpyServerAssetName\"")
+        buildConfigField("boolean", "SCRCPY_BUNDLED", "true")
     }
 
     signingConfigs {
@@ -157,7 +166,10 @@ android {
 
     flavorDimensions.add("variants")
     productFlavors {
-        register("core")
+        register("core") {
+            // F-Droid build: no prebuilt scrcpy-server in the APK (see the scrcpy block at the top).
+            buildConfigField("boolean", "SCRCPY_BUNDLED", "false")
+        }
         register("foss")
         register("gplay")
     }
@@ -209,13 +221,16 @@ android {
     }
 }
 
-// Bundle the downloaded scrcpy-server as a generated asset for every variant.
+// Bundle the downloaded scrcpy-server as a generated asset, except for core (F-Droid): core variants
+// never reference downloadScrcpyServer, so it is never scheduled for them.
 androidComponents {
     onVariants { variant ->
-        variant.sources.assets?.addGeneratedSourceDirectory(
-            downloadScrcpyServer,
-            DownloadAssetTask::outputDir
-        )
+        if (variant.flavorName != "core") {
+            variant.sources.assets?.addGeneratedSourceDirectory(
+                downloadScrcpyServer,
+                DownloadAssetTask::outputDir
+            )
+        }
     }
 }
 

@@ -10,13 +10,18 @@ import android.provider.Settings
 import androidx.annotation.DrawableRes
 import androidx.core.widget.addTextChangedListener
 import androidx.lifecycle.lifecycleScope
+import com.novadial.phone.BuildConfig
 import com.novadial.phone.R
 import com.novadial.phone.databinding.ActivityCallRecordingSettingsBinding
 import com.novadial.phone.databinding.ItemRecordingStatusBinding
+import com.novadial.phone.helpers.ScrcpyServerImporter
 import com.novadial.phone.recorder.CallRecordingManager
 import com.novadial.phone.recorder.ShizukuAuthKeyStore
 import com.novadial.phone.recorder.ShizukuConnectionManager
+import com.novadial.phone.recorder.scrcpy.ServerExtractor
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import org.fossify.commons.extensions.applyColorFilter
 import org.fossify.commons.extensions.beGone
 import org.fossify.commons.extensions.beVisible
@@ -43,6 +48,7 @@ class CallRecordingSettingsActivity : SimpleActivity() {
     private val binding by viewBinding(ActivityCallRecordingSettingsBinding::inflate)
     private var isTesting = false
     private var isNoticeExpanded = false
+    private val serverImporter = ScrcpyServerImporter(this) { refreshServerStatus() }
 
     private enum class Level { OK, WARNING, ERROR }
 
@@ -93,6 +99,8 @@ class CallRecordingSettingsActivity : SimpleActivity() {
                 if (recordingSettingsEnable.isChecked) disableRecording() else connect()
             }
             recordingSettingsBatteryHolder.setOnClickListener { openShizukuAppSettings() }
+            // Core (F-Droid) build: lets the user (re)import scrcpy-server at any time.
+            if (!BuildConfig.SCRCPY_BUNDLED) statusServer.root.setOnClickListener { serverImporter.showMissingDialog() }
             recordingSettingsFilesHolder.setOnClickListener {
                 startActivity(Intent(this@CallRecordingSettingsActivity, RecordingsActivity::class.java))
             }
@@ -112,6 +120,7 @@ class CallRecordingSettingsActivity : SimpleActivity() {
         binding.recordingSettingsConnect.backgroundTintList = ColorStateList.valueOf(primary)
         binding.recordingSettingsConnect.setTextColor(primary.getContrastColor())
         refreshStatus()
+        refreshServerStatus()
     }
 
     override fun onDestroy() {
@@ -194,6 +203,22 @@ class CallRecordingSettingsActivity : SimpleActivity() {
         }
     }
 
+    /** Hashes the server file off the main thread, then updates its status row. */
+    private fun refreshServerStatus() {
+        lifecycleScope.launch {
+            val available = withContext(Dispatchers.IO) { ServerExtractor.isServerAvailable(applicationContext) }
+            setStatus(
+                binding.statusServer, R.string.call_recording_status_server,
+                if (available) Level.OK else Level.ERROR,
+                when {
+                    BuildConfig.SCRCPY_BUNDLED -> R.string.call_recording_value_server_bundled
+                    available -> R.string.call_recording_value_server_imported
+                    else -> R.string.call_recording_value_server_missing
+                }
+            )
+        }
+    }
+
     private fun setStatus(row: ItemRecordingStatusBinding, labelRes: Int, level: Level, valueRes: Int) {
         val (@DrawableRes icon, colorRes) = when (level) {
             Level.OK -> R.drawable.ic_check_circle_vector to org.fossify.commons.R.color.md_green_600
@@ -269,6 +294,8 @@ class CallRecordingSettingsActivity : SimpleActivity() {
                     getString(if (verified) R.string.call_recording_connected else R.string.call_recording_connected_key_not_verified),
                     success = true
                 )
+                // Recording was just enabled: in the core build, ask for scrcpy-server right away if it is missing.
+                serverImporter.checkAndPrompt()
             }.onFailure { e ->
                 val message = when {
                     e is ShizukuConnectionManager.ShizukuPermissionDeniedException ->
