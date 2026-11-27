@@ -170,7 +170,7 @@
     <string name="call_recording_stopping">Zapisywanie nagrania…</string>
     <string name="call_recording_error_android_version">Nagrywanie rozmów wymaga systemu Android 10 lub nowszego</string>
     <string name="call_recording_error_no_active_call">Nagrywanie można rozpocząć tylko w trakcie aktywnego połączenia</string>
-    <string name="call_recording_error_shizuku_not_installed">Nagrywanie połączeń wymaga aplikacji Shizuku. Zainstaluj i uruchom Shizuku, a następnie spróbuj ponownie.</string>
+    <string name="call_recording_error_shizuku_not_installed">Nagrywanie rozmów wymaga aplikacji Shizuku. Zainstaluj i uruchom Shizuku, a następnie spróbuj ponownie.</string>
     <string name="call_recording_error_shizuku_not_running">Usługa Shizuku nie działa. Uruchom ją w aplikacji Shizuku lub zapisz klucz uwierzytelniania Shizuku w Ustawienia → Nagrywanie rozmów.</string>
     <string name="call_recording_error_shizuku_start_failed">Nie udało się uruchomić usługi Shizuku przy użyciu zapisanego klucza autoryzacyjnego. Sprawdź klucz w sekcji Ustawienia → Nagrywanie rozmów.</string>
     <string name="call_recording_error_not_enabled">Nagrywanie rozmów jest wyłączone. Włącz je w Ustawienia → Nagrywanie rozmów.</string>
@@ -194,7 +194,7 @@
     <string name="call_recording_value_not_installed">Nie zainstalowane</string>
     <string name="call_recording_value_running">Uruchomione</string>
     <string name="call_recording_value_starts_automatically">Uruchamia się automatycznie</string>
-    <string name="call_recording_value_not_running">Nie urucjomione</string>
+    <string name="call_recording_value_not_running">Nie uruchomione</string>
     <string name="call_recording_value_authorized">Autoryzowany</string>
     <string name="call_recording_value_not_authorized">Nie autoryzowany</string>
     <string name="call_recording_value_denied">Odmówiono</string>
@@ -202,11 +202,11 @@
     <string name="call_recording_value_key_verified">Zweryfikowane</string>
     <string name="call_recording_value_key_not_verified">Zapisano, nie zweryfikowano</string>
     <string name="call_recording_value_key_unsupported">Nieobsługiwane przez tę wersję Shizuku</string>
-    <string name="call_recording_value_not_set">Nieustawione</string>
+    <string name="call_recording_value_not_set">Nieustawiony</string>
     <string name="call_recording_value_on">Włączone</string>
     <string name="call_recording_value_off">Wyłączone</string>
     <string name="call_recording_grant_permission">Autoryzuj NovaDial w Shizuku</string>
-    <string name="call_recording_grant_permission_summary">Wymagane do nagrywania połączeń</string>
+    <string name="call_recording_grant_permission_summary">Wymagane do nagrywania rozmów</string>
     <string name="call_recording_key_hint">Klucz autoryzacji Shizuku</string>
     <string name="call_recording_key_help">W Shizuku otwórz „Steruj Shizuku za pomocą aplikacji do automatyzacji” → „Pokaż intencje” i skopiuj klucz uwierzytelniania. Umożliwia to aplikacji NovaDial uruchamianie usługi Shizuku podczas nagrywania.</string>
     <string name="call_recording_connect">Połącz z Shizuku</string>
@@ -223,7 +223,7 @@
     <string name="call_recording_info">Nagrywanie rozmów telefonicznych może podlegać przepisom prawnym, ograniczeniom lub wymogom dotyczącym powiadomienia uczestników rozmowy bądź uzyskania ich zgody – w zależności od kraju lub konkretnych okoliczności.\n\nPrzed skorzystaniem z tej funkcji upewnij się, że jej użycie jest zgodne z prawem oraz innymi zasadami obowiązującymi w Twoim kraju lub miejscu przebywania.\n\nPonosisz wyłączną odpowiedzialność za sposób korzystania z funkcji nagrywania rozmów, w tym za przestrzeganie wszelkich obowiązujących wymogów prawnych oraz uzyskanie wymaganych zgód.\n\nTwórca aplikacji nie udziela porad prawnych i nie ponosi odpowiedzialności za korzystanie z tej funkcji w sposób naruszający obowiązujące przepisy prawa.\n\nKorzystając z funkcji nagrywania rozmów, potwierdzasz, że zapoznałeś się z niniejszą informacją, zrozumiałeś ją i przyjmujesz do wiadomości.\n\nFunkcja nagrywania wykorzystuje aplikację Shizuku. Do uruchomienia Shizuku za pomocą klucza autoryzacyjnego wymagane jest użycie wersji (forka) stworzonej przez thedjchi: https://github.com/thedjchi/Shizuku/releases/tag/v13.7.0-thedjchi\n\nDostępność oraz jakość nagrań zależą od używanego urządzenia; niektóre urządzenia nie umożliwiają rejestracji dźwięku podczas rozmów telefonicznych.</string>
     <string name="call_recording_agree">Przyjmuję do wiadomości i wyrażam zgodę</string>
     <string name="call_recording_section">Nagrywanie</string>
-    <string name="call_recording_enable">Nagrywaj połączenia</string>
+    <string name="call_recording_enable">Nagrywaj rozmowy</string>
     <string name="call_recording_battery">Optymalizacja baterii dla Shizuku</string>
     <string name="call_recording_battery_unrestricted">Bez ograniczeń</string>
     <string name="call_recording_battery_optimized">”Zoptymalizowane. Dotknij i ustaw użycie baterii na „Bez ograniczeń”, aby nagrywanie działało przy zablokowanym ekranie.</string>
@@ -241,4 +241,16 @@
     <string name="call_recording_share">Udostępnij</string>
     <string name="call_recording_delete_confirmation">Usunąć to nagranie?</string>
     <string name="call_recording_unavailable">Tego nagrania nie można odtworzyć. Plik może być uszkodzony lub może go brakować.</string>
+    <string name="call_recording_error_server_missing">Brakuje scrcpy-server, więc nie można nagrać rozmowy. Zaimportuj go w Ustawienia → Nagrywanie rozmów.</string>
+    <string name="call_recording_server_missing_title">brak scrcpy-server</string>
+    <string name="call_recording_server_missing_message">Nagrywanie rozmów wymaga scrcpy-server v%1$s. Nie jest on dołączony do tej wersji, ponieważ zasady F-Droid nie zezwalają na gotowe pliki binarne. Dotknij Pobierz, aby otworzyć oficjalną stronę wydania scrcpy v%1$s i pobrać plik o nazwie scrcpy-server-v%1$s. Następnie wróć, dotknij Importuj i wybierz pobrany plik. Aplikacja NovaDial sprawdzi plik przed jego użyciem.</string>
+    <string name="call_recording_server_download">Pobierz</string>
+    <string name="call_recording_server_import">Importuj</string>
+    <string name="call_recording_server_import_success">scrcpy-server został zaimportowany i zweryfikowany. Nagrywanie rozmów jest gotowe.</string>
+    <string name="call_recording_server_import_mismatch">Niewłaściwy plik lub wersja: wymagany jest scrcpy-server v%1$s</string>
+    <string name="call_recording_server_import_error">Nie udało się zaimportować pliku: %1$s</string>
+    <string name="call_recording_status_server">scrcpy-server</string>
+    <string name="call_recording_value_server_bundled">Dołączony</string>
+    <string name="call_recording_value_server_imported">Zaimportowany i zweryfikowany</string>
+    <string name="call_recording_value_server_missing">Brak. Dotknij, aby zaimportować.</string>
 </resources>
