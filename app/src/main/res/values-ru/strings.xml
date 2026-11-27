@@ -241,4 +241,16 @@
     <string name="call_recording_pause">Пауза</string>
     <string name="call_recording_seek">Позиция воспроизведения</string>
     <string name="call_recording_share">Поделиться</string>
+    <string name="call_recording_value_server_imported">Импортировано и проверено</string>
+    <string name="call_recording_value_server_missing">Отсутствует. Нажмите, чтобы импортировать.</string>
+    <string name="call_recording_error_server_missing">Отсутствует scrcpy-сервер, поэтому звонок невозможно записать. Импортируйте его в разделе «Настройки» → «Запись звонков».</string>
+    <string name="call_recording_server_missing_title">Отсутствует scrcpy-сервер</string>
+    <string name="call_recording_server_missing_message">Для записи звонков требуется scrcpy-сервер v%1$s. Он не включен в эту сборку, поскольку правила F-Droid не разрешают использовать готовые двоичные файлы. Нажмите «Скачать», чтобы открыть официальную страницу релиза scrcpy v%1$s и скачать файл под названием scrcpy-server-v%1$s. Затем вернитесь, нажмите «Импортировать» и выберите загруженный файл. NovaDial проверяет файл перед его использованием.</string>
+    <string name="call_recording_server_download">Скачать</string>
+    <string name="call_recording_server_import">Импортировать</string>
+    <string name="call_recording_server_import_success">scrcpy-сервер импортирован и проверен. Функция записи звонков готова к использованию.</string>
+    <string name="call_recording_server_import_mismatch">Неверный файл или версия: требуется scrcpy-сервер v%1$s</string>
+    <string name="call_recording_server_import_error">Не удалось импортировать файл: %1$s</string>
+    <string name="call_recording_status_server">scrcpy-сервер</string>
+    <string name="call_recording_value_server_bundled">Установлен</string>
 </resources>
